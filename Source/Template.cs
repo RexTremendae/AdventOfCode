@@ -66,4 +66,33 @@ namespace Day2
             }
         }
     }
+
+    public class Point
+    {
+        public Point(int x, int y)
+        {
+            X = x;
+            Y = y;
+        }
+
+        public int X { get; }
+
+        public int Y { get; }
+
+        public override int GetHashCode()
+        {
+            return Tuple.Create(X, Y).GetHashCode();
+        }
+
+        public override bool Equals(object other)
+        {
+            Point otherPoint = other as Point;
+            if (otherPoint == null)
+            {
+                return false;
+            }
+
+            return X == otherPoint.X && Y == otherPoint.Y;
+        }
+    }
 }
