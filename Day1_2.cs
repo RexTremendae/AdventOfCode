@@ -49,7 +49,7 @@ namespace Day1
                         }
                     }
 
-                    Console.WriteLine($"Going {directions[dir]} {dist} steps");
+                    //Console.WriteLine($"Going {directions[dir]} {dist} steps");
                     int dX = 0, dY = 0;
 
                     switch(directions[dir])
@@ -76,7 +76,7 @@ namespace Day1
 
                     for (int i = 0; i < dist; i++)
                     {
-                        Console.WriteLine($"Adding ({current.Item1}, {current.Item2})");
+                        //Console.WriteLine($"Adding ({current.Item1}, {current.Item2})");
                         visited.Add(current);
                         current = Tuple.Create(current.Item1 + dX, current.Item2 + dY);
                         if (visited.Contains(current))
