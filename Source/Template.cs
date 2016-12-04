@@ -79,6 +79,15 @@ namespace Day2
 
         public int Y { get; }
 
+        public static Point Parse(string input)
+        {
+            var split = input.Split(',');
+            int x = int.Parse(split[0]);
+            int y = int.Parse(split[1]);
+
+            return new Point(x, y);
+        }
+
         public override int GetHashCode()
         {
             return Tuple.Create(X, Y).GetHashCode();
