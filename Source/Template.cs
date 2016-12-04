@@ -25,6 +25,12 @@ namespace Day2
             {
                 reader = new ConsoleReader();
             }
+
+            while (!reader.EndOfStream)
+            {
+                var input = reader.ReadLine();
+                if (string.IsNullOrEmpty(input)) break;
+            }
         }
     }
 
