@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 using static System.Console;
 
@@ -40,7 +41,7 @@ namespace Day2
                 Write($"{i+1} ");
                 InitProgressBar(input.Length);
 
-                string newString = string.Empty;
+                var newString = new StringBuilder();
                 int idx = 0;
                 while (idx < input.Length)
                 {
@@ -53,14 +54,14 @@ namespace Day2
                         counter++;
                     }
 
-                    newString += counter.ToString();
-                    newString += current;
+                    newString.Append(counter.ToString());
+                    newString.Append(current);
 
                     UpdateProgress(idx);
                 }
 
-                //WriteLine(newString);
-                input = newString;
+                input = newString.ToString();
+                //WriteLine(input);
                 lastLength = newString.Length;
                 WriteLine();
             }
