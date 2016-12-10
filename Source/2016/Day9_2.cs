@@ -11,7 +11,6 @@ namespace Day2
     public struct ExpandResult
     {
         public long ExpandedLength;
-        public int OriginalIndex;
         public string ExpandedString;
     }
 
@@ -36,54 +35,51 @@ namespace Day2
 
             var input = reader.ReadLine();
 
-            ExpandResult result = new ExpandResult {ExpandedLength = -1, OriginalIndex = 0};
-            long totalExpandedLength = 0;
-            string output = "";
-            
-            while(result.ExpandedLength != 0)
-            {
-                result = Expand(input, result.OriginalIndex);
-                totalExpandedLength += result.ExpandedLength;
-                output += result.ExpandedString;
-            }
+            ExpandResult result = Expand(input, 0, input.Length);
 
-            WriteLine($"{output}: {totalExpandedLength}");
+            //WriteLine($"{result.ExpandedString}: {result.ExpandedLength}");
+            WriteLine($"{result.ExpandedLength}");
         }
 
-        ExpandResult Expand(string input, int index)
+        ExpandResult Expand(string input, int startIndex, long length)
         {
-            ExpandResult result = new ExpandResult() {OriginalIndex = index, ExpandedLength = 0};
+            //WriteLine($"Expand(\"{input}\", {startIndex}, {length})");
+            ExpandResult result = new ExpandResult() {ExpandedLength = 0, ExpandedString = string.Empty};
 
-            if (index >= input.Length)
-                return result;
-
-            if (input[result.OriginalIndex] == '(')
+            int i = startIndex;
+            while (i < startIndex+length)
             {
-                int start = result.OriginalIndex+1;
-                while (input[result.OriginalIndex] != ')') result.OriginalIndex++;
-                int end = result.OriginalIndex;
-
-                // ')'
-                result.OriginalIndex++;
-
-                string data = input.Substring(start, end-start);
-                var split = data.Split('x');
-
-                int letterCount = int.Parse(split[0]);
-                int repeatCount = int.Parse(split[1]);
-
-                for (int i = 0; i < repeatCount; i++)
+                if (input[i] == '(')
                 {
-                    result.ExpandedLength += letterCount;
-                    result.ExpandedString += input.Substring(result.OriginalIndex, letterCount);
+                    int start = i+1;
+                    while (input[i] != ')') i++;
+                    int end = i;
+
+                    // ')'
+                    i++;
+
+                    string data = input.Substring(start, end-start);
+                    var split = data.Split('x');
+
+                    long letterCount = long.Parse(split[0]);
+                    long repeatCount = long.Parse(split[1]);
+
+                    //WriteLine($"  {i} / {letterCount}");
+                    var innerResult = Expand(input, i, letterCount);
+                    for (long j = 0; j < repeatCount; j ++)
+                    {
+                        result.ExpandedLength += innerResult.ExpandedLength;
+                        //result.ExpandedString += innerResult.ExpandedString;
+                    }
+
+                    i += (int)letterCount;
                 }
-                result.OriginalIndex += letterCount;
-            }
-            else
-            {
-                result.ExpandedLength++;
-                result.ExpandedString += input[result.OriginalIndex];
-                result.OriginalIndex++;
+                else
+                {
+                    result.ExpandedLength++;
+                    //result.ExpandedString += input[i];
+                    i++;
+                }
             }
 
             return result;
