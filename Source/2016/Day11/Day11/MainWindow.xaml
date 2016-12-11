@@ -1,0 +1,68 @@
+﻿<Window x:Class="Day11.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Day11"
+        mc:Ignorable="d"
+        Title="MainWindow"
+        Height="400" Width="525"
+        Background="Bisque">
+
+    <StackPanel Orientation="Vertical">
+        <StackPanel Orientation="Horizontal" Margin="10">
+            <Label Content="Moves:  "
+                   FontSize="20"
+                   FontWeight="Bold"/>
+            <Label Content="{Binding MoveCounter}"
+                   FontSize="20"
+                   FontWeight="Bold"/>
+
+            <Button Click="Reset_Click"
+                    Content="Reset"
+                    Width="60"
+                    Height="30"
+                    Margin="15"
+                    FontWeight="Bold"/>
+        </StackPanel>
+
+        <ItemsControl ItemsSource="{Binding Items}"
+                      Width="{Binding ContentWidth}"
+                      Height="{Binding ContentHeight}"
+                      Background="LightGray"
+                      Margin="10">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="local:Item">
+                    <Border BorderBrush="{Binding OuterBorderBrush}"
+                            BorderThickness="2"
+                            Margin="2">
+                        
+                        <Border BorderBrush="{Binding InnerBorderBrush}"
+                                BorderThickness="1">
+                            
+                            <Label Content="{Binding DisplayText}"
+                                   Width="40"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   HorizontalContentAlignment="Center"
+                                   VerticalContentAlignment="Center"
+                                   MouseUp="Item_Click"
+                                   Background="{Binding BackgroundBrush}"
+                                   Tag="{Binding Id}"
+                                   FontWeight="{Binding FontWeight}"/>
+                        </Border>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <Button Click="MoveUp_Click" Content="^" Width="80" Height="30" Margin="5"/>
+        <Button Click="MoveDown_Click" Content="v" Width="80" Height="30" Margin="5"/>
+    </StackPanel>
+</Window>
