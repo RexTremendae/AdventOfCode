@@ -149,6 +149,14 @@ namespace Day11
             _gameOver = false;
         }
 
+        private void FindSolution_Click(object sender, RoutedEventArgs e)
+        {
+            Solver solver = new Solver(_initialState);
+            solver.Solve();
+
+            Reset_Click(null, null);
+        }
+
         public void MoveElevator(int newYPos)
         {
             if (_gameOver) return;
@@ -177,66 +185,47 @@ namespace Day11
 
             MoveCounter++;
 
-            CheckForFriedMicrochips(oldYPos);
-            CheckForFriedMicrochips(newYPos);
-            CheckForFinishedState();
+            var state = GetCurrentState();
+
+            CheckForFriedMicrochips(state, oldYPos);
+            CheckForFriedMicrochips(state, newYPos);
+            CheckForFinishedState(state);
         }
 
-        public void CheckForFinishedState()
+        private string[][] GetCurrentState()
         {
-            bool finished = true;
+            string[][] state = new string[Rows][];
+            int idx = 0;
 
-            for (int i = 1; i < Cols; i++)
+            for (int y = 0; y < Rows; y++)
             {
-                if (_itemDictionary[i.ToString()].DisplayText == string.Empty)
-                {
-                    finished = false;
-                }
+                state[y] = new string[Cols];
+                for (int x = 0; x < Cols; x++, idx++)
+                    state[y][x] = _itemDictionary[idx.ToString()].DisplayText;
             }
 
-            if (finished)
+            return state;
+        }
+
+        public void CheckForFriedMicrochips(string[][] state, int yPos)
+        {
+            int[] friedXPositions = Solver.CheckForFriedMicrochips(state, yPos);
+            foreach (int x in friedXPositions)
             {
-                for (int i = 1; i < Cols; i++)
-                    _itemDictionary[i.ToString()].BackgroundBrush = new SolidColorBrush(Colors.LightGreen);
+                var item = _itemDictionary[(yPos * Cols + x).ToString()];
+                item.BackgroundBrush = new SolidColorBrush(Colors.Red);
                 _gameOver = true;
             }
         }
 
-        public void CheckForFriedMicrochips(int yPos)
+        public void CheckForFinishedState(string[][] state)
         {
-            List<Item> rowItems = new List<Item>();
-            for (int x = 1; x < Cols; x++)
+            if (Solver.CheckForFinishedState(state))
             {
-                rowItems.Add(_itemDictionary[(yPos * Cols + x).ToString()]);
-            }
+                _gameOver = true;
 
-            foreach (var item in rowItems)
-            {
-                if (item.DisplayText.Last() != "M")
-                    continue;
-
-                string id = item.DisplayText.AllButLast();
-
-                bool friendlyGenerator = false;
-                bool hostileGenerator = false;
-
-                foreach (var v in rowItems)
-                {
-                    if (v.DisplayText.Last() == "G")
-                    {
-                        if (v.DisplayText.AllButLast() == id)
-                            friendlyGenerator = true;
-                        else
-                            hostileGenerator = true;
-                    }
-                }
-
-                if (hostileGenerator && !friendlyGenerator)
-                {
-                    item.BackgroundBrush = new SolidColorBrush(Colors.Red);
-                    _gameOver = true;
-                    return;
-                }
+                for (int i = 1; i < Cols; i++)
+                    _itemDictionary[i.ToString()].BackgroundBrush = new SolidColorBrush(Colors.LightGreen);
             }
         }
 
@@ -245,21 +234,6 @@ namespace Day11
         private void RaisePropertyChanged([CallerMemberName]string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-    }
-
-    public static class StringExtension
-    {
-        public static string Last(this string input)
-        {
-            if (string.IsNullOrEmpty(input)) return string.Empty;
-            return input.Substring(input.Length - 1, 1);
-        }
-
-        public static string AllButLast(this string input)
-        {
-            if (string.IsNullOrEmpty(input)) return string.Empty;
-            return input.Substring(0, input.Length - 1);
         }
     }
 }

@@ -11,19 +11,25 @@
 
     <StackPanel Orientation="Vertical">
         <StackPanel Orientation="Horizontal" Margin="10">
-            <Label Content="Moves:  "
-                   FontSize="20"
-                   FontWeight="Bold"/>
-            <Label Content="{Binding MoveCounter}"
-                   FontSize="20"
-                   FontWeight="Bold"/>
-
+            <StackPanel Orientation="Horizontal" Width="150">
+                <Label Content="Moves:  "
+                       FontSize="20"
+                       FontWeight="Bold"/>
+                <Label Content="{Binding MoveCounter}"
+                       FontSize="20"
+                       FontWeight="Bold"/>
+            </StackPanel>
+            
             <Button Click="Reset_Click"
                     Content="Reset"
                     Width="60"
                     Height="30"
                     Margin="15"
                     FontWeight="Bold"/>
+
+            <Button Click="FindSolution_Click"
+                    Height="30"
+                    Content="Find Solution"/>
         </StackPanel>
 
         <ItemsControl ItemsSource="{Binding Items}"
