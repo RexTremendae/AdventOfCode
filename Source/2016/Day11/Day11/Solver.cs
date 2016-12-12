@@ -33,44 +33,47 @@ namespace Day11
     public class Solver
     {
         private Queue<Tuple<Movement, List<Movement>>> _movementQueue;
-        private string[][] _initialState;
+        private State _initialState;
         public IEnumerable<Movement> Solution { get; private set; }
-
+        private int _cols;
+        private int _rows;
+                
         public event EventHandler<Progress> ReportProgress;
         Progress _currentProgress;
 
         public Solver(string[][] initialState)
         {
-            _initialState = initialState;
+            _initialState = new State(initialState);
             _movementQueue = new Queue<Tuple<Movement, List<Movement>>>();
             _currentProgress = new Progress();
+            _cols = initialState[0].Length;
+            _rows = initialState.Length;
         }
 
-        public void EnqueuePossibleMovements(string[][] state, int elevatorYPos, List<Movement> visited)
+        public void EnqueuePossibleMovements(State state, int elevatorYPos, List<Movement> visited)
         {
-            int cols = state[0].Length;
             //var elevatorY = FindElevatorYPos(initialState);
 
-            for (int x = 1; x < cols; x++)
+            for (int x = 1; x < _cols; x++)
             {
-                if (state[elevatorYPos][x] == string.Empty) continue;
+                if (state.GetData(x, elevatorYPos) == string.Empty) continue;
 
                 EnqueueMovements(state, elevatorYPos, new[] { x }, visited);
 
-                for (int x2 = x + 1; x2 < cols; x2++)
+                for (int x2 = x + 1; x2 < _cols; x2++)
                 {
-                    if (state[elevatorYPos][x2] == string.Empty) continue;
+                    if (state.GetData(x2, elevatorYPos) == string.Empty) continue;
 
                     EnqueueMovements(state, elevatorYPos, new[] { x, x2 }, visited);
                 }
             }
         }
 
-        public void EnqueueMovements(string[][] state, int elevatorY, int[] selectionXPositions, List<Movement> visited)
+        public void EnqueueMovements(State state, int elevatorY, int[] selectionXPositions, List<Movement> visited)
         {
             Movement movement = new Movement()
             {
-                State = Extensions.Clone(state),
+                State = state.Clone(),
                 ElevatorYPosBefore = elevatorY,
                 SelectionXPositions = selectionXPositions,
                 MovementDirection = MovementDirection.Up
@@ -83,7 +86,7 @@ namespace Day11
 
             movement = movement.Clone();
             movement.MovementDirection = MovementDirection.Down;
-            if (!visited.Any(x => x.Equals(movement)) && movement.ElevatorYPosBefore < state.Length - 1)
+            if (!visited.Any(x => x.Equals(movement)) && movement.ElevatorYPosBefore < _rows)
             {
                 _movementQueue.Enqueue(Tuple.Create(movement, visited.Clone()));
             }
@@ -155,7 +158,7 @@ namespace Day11
         public bool Solve()
         {
             Solution = null;
-            EnqueuePossibleMovements(_initialState, _initialState.Length-1, new List<Movement>());
+            EnqueuePossibleMovements(_initialState, _rows-1, new List<Movement>());
 
             while (Solution == null)
             {
@@ -171,7 +174,7 @@ namespace Day11
                     ReportProgress?.Invoke(this, newProgress);
                 }
 
-                var state = Extensions.Clone(movement.State);
+                var state = movement.State.Clone();
 
                 int dY;
                 if (movement.MovementDirection == MovementDirection.Up)
@@ -183,18 +186,21 @@ namespace Day11
                     dY = 1;
                 }
 
+                var newYPos = movement.ElevatorYPosBefore + dY;
+                if (newYPos < 0 || newYPos >= _rows)
+                    continue;
+
                 foreach (int x in movement.SelectionXPositions)
                 {
-                    state[movement.ElevatorYPosBefore + dY][x] = state[movement.ElevatorYPosBefore][x];
-                    state[movement.ElevatorYPosBefore][x] = string.Empty;
-
-                    state[movement.ElevatorYPosBefore][0] = string.Empty;
-                    state[movement.ElevatorYPosBefore + dY][0] = "E";
+                    string tmp = state.GetData(x, movement.ElevatorYPosBefore);
+                    state.MoveOrAdd(x, newYPos, tmp);
+                    state.MoveOrAdd(0, newYPos, "E");
                 }
 
+                var rawState = state.Expand();
                 List<int> friedChips = new List<int>();
-                friedChips.AddRange(CheckForFriedMicrochips(state, movement.ElevatorYPosBefore));
-                friedChips.AddRange(CheckForFriedMicrochips(state, movement.ElevatorYPosBefore + dY));
+                friedChips.AddRange(CheckForFriedMicrochips(rawState, movement.ElevatorYPosBefore));
+                friedChips.AddRange(CheckForFriedMicrochips(rawState, newYPos));
 
                 if (friedChips.Count != 0)
                 {
@@ -204,9 +210,9 @@ namespace Day11
                 {
                     var visitedClone = visited.Clone();
                     visitedClone.Add(movement);
-                    EnqueuePossibleMovements(state, movement.ElevatorYPosBefore + dY, visitedClone);
+                    EnqueuePossibleMovements(state, newYPos, visitedClone);
 
-                    if (CheckForFinishedState(state))
+                    if (CheckForFinishedState(rawState))
                     {
                         visited.Add(movement);
                         Solution = visited;

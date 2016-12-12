@@ -4,7 +4,7 @@ namespace Day11
 {
     public class Movement
     {
-        public string[][] State;
+        public State State;
         public int ElevatorYPosBefore;
         public MovementDirection MovementDirection;
         public int[] SelectionXPositions;
@@ -13,7 +13,7 @@ namespace Day11
         {
             Movement clone = new Movement();
 
-            clone.State = Extensions.Clone(State);
+            clone.State = State.Clone();
             clone.ElevatorYPosBefore = ElevatorYPosBefore;
             clone.MovementDirection = MovementDirection;
             clone.SelectionXPositions = Extensions.Clone(SelectionXPositions);
@@ -27,25 +27,7 @@ namespace Day11
             if (other == null)
                 return false;
 
-            for (int y = 0; y < State.Length; y++)
-                for (int x = 0; x < State[y].Length; x++)
-                    if (State[y][x] != other.State[y][x])
-                        return false;
-/*
-            if (ElevatorYPosBefore != other.ElevatorYPosBefore)
-                return false;
-
-            if (MovementDirection != other.MovementDirection)
-                return false;
-
-            if (SelectionXPositions.Length != other.SelectionXPositions.Length)
-                return false;
-
-            for (int i = 0; i < SelectionXPositions.Length; i++)
-                if (SelectionXPositions[i] != other.SelectionXPositions[i])
-                    return false;
-                    */
-            return true;
+            return other.State.Equals(State);
         }
 
         public override string ToString()
@@ -54,11 +36,12 @@ namespace Day11
             int paddedWidth = 5;
 
             sb.AppendLine("State:");
-            for (int y = 0; y < State.Length; y++)
+            var rawState = State.Expand();
+            for (int y = 0; y < rawState.Length; y++)
             {
-                for (int x = 0; x < State[y].Length; x++)
+                for (int x = 0; x < rawState[y].Length; x++)
                 {
-                    string data = State[y][x];
+                    string data = rawState[y][x];
                     if (string.IsNullOrEmpty(data))
                         data = ".";
 

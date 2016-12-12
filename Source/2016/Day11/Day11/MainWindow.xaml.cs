@@ -26,19 +26,23 @@ namespace Day11
         private int _stepsProgress;
         private long _queueSize;
 
-        private string[][] _initialState = new[]
+        private static string[][] _small = new[]
         {
-/*
             new[] { "",  "",   "",   "",   "" },
             new[] { "",  "",   "",   "LG", "" },
             new[] { "",  "HG", "",   "",   "" },
             new[] { "E", "",   "HM", "",   "LM" }
-*/
+        };
+
+        private static string[][] _large = new[]
+        {
             new[] { "",   "",     "",     "",     "",     "",     "",     "",    "",    "",    "" },
             new[] { "",   "",     "",     "",     "",     "",     "",     "",    "",    "",    "" },
             new[] { "",   "",     "PLM",  "",     "",     "",     "PRM",  "",    "",    "",    "" },
             new[] { "E",  "PLG",  "",     "THG",  "THM",  "PRG",  "",     "RG",  "RM",  "CG",  "CM" }
         };
+
+        private string[][] _initialState = _large;
 
         public MainWindow()
         {
