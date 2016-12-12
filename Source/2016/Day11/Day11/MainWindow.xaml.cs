@@ -23,6 +23,8 @@ namespace Day11
         private int _moveCounter;
         private int Cols, Rows;
         private bool _gameOver;
+        private int _stepsProgress;
+        private long _queueSize;
 
         private string[][] _initialState = new[]
         {
@@ -32,7 +34,6 @@ namespace Day11
             new[] { "",  "HG", "",   "",   "" },
             new[] { "E", "",   "HM", "",   "LM" }
 */
-
             new[] { "",   "",     "",     "",     "",     "",     "",     "",    "",    "",    "" },
             new[] { "",   "",     "",     "",     "",     "",     "",     "",    "",    "",    "" },
             new[] { "",   "",     "PLM",  "",     "",     "",     "PRM",  "",    "",    "",    "" },
@@ -71,6 +72,26 @@ namespace Day11
                 }
 
             Reset_Click(null, null);
+        }
+
+        public long QueueSize
+        {
+            get { return _queueSize; }
+            set
+            {
+                _queueSize = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        public int StepsProgress
+        {
+            get { return _stepsProgress; }
+            set
+            {
+                _stepsProgress = value;
+                RaisePropertyChanged();
+            }
         }
 
         public int ContentWidth
@@ -167,9 +188,10 @@ namespace Day11
 
         private void FindSolution_Click(object sender, RoutedEventArgs e)
         {
+            Solver solver = new Solver(_initialState);
             Task.Run(() =>
             {
-                Solver solver = new Solver(_initialState);
+                solver.ReportProgress += Solver_ReportProgress;
                 solver.Solve();
 
                 Application.Current.Dispatcher.Invoke(() => Reset_Click(null, null));
@@ -190,6 +212,15 @@ namespace Day11
 
                     Thread.Sleep(1000);
                 }
+            });
+        }
+
+        private void Solver_ReportProgress(object sender, Progress p)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                QueueSize = p.QueueSize;
+                StepsProgress = p.Steps;
             });
         }
 

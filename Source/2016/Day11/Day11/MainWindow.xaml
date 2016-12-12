@@ -9,6 +9,10 @@
         Height="400" Width="525"
         Background="Bisque">
 
+    <Window.Resources>
+        <local:ThousandsSeparatorConverter x:Key="ThousandsSeparatorConverter"/>
+    </Window.Resources>
+
     <StackPanel Orientation="Vertical">
         <StackPanel Orientation="Horizontal" Margin="10">
             <StackPanel Orientation="Horizontal" Width="150">
@@ -30,6 +34,13 @@
             <Button Click="FindSolution_Click"
                     Height="30"
                     Content="Find Solution"/>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal">
+            <Label Content="Queue Size: " Foreground="Gray"/>
+            <Label Content="{Binding QueueSize, Converter={StaticResource ThousandsSeparatorConverter}}" Foreground="Gray"/>
+            <Label Content="  Steps Progress: " Foreground="Gray"/>
+            <Label Content="{Binding StepsProgress, Converter={StaticResource ThousandsSeparatorConverter}}" Foreground="Gray"/>
         </StackPanel>
 
         <ItemsControl ItemsSource="{Binding Items}"

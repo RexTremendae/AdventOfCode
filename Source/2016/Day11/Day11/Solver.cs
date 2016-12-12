@@ -18,16 +18,32 @@ namespace Day11
         }
     }
 
+    public class Progress
+    {
+        public Progress(int steps = 0, long queueSize = 0)
+        {
+            Steps = steps;
+            QueueSize = queueSize;
+        }
+
+        public int Steps { get; }
+        public long QueueSize { get; }
+    }
+
     public class Solver
     {
         private Queue<Tuple<Movement, List<Movement>>> _movementQueue;
         private string[][] _initialState;
         public IEnumerable<Movement> Solution { get; private set; }
 
+        public event EventHandler<Progress> ReportProgress;
+        Progress _currentProgress;
+
         public Solver(string[][] initialState)
         {
             _initialState = initialState;
             _movementQueue = new Queue<Tuple<Movement, List<Movement>>>();
+            _currentProgress = new Progress();
         }
 
         public void EnqueuePossibleMovements(string[][] state, int elevatorYPos, List<Movement> visited)
@@ -146,6 +162,14 @@ namespace Day11
                 var dequeued = _movementQueue.Dequeue();
                 var movement = dequeued.Item1;
                 var visited = dequeued.Item2;
+
+                Progress newProgress = new Progress(visited.Count, _movementQueue.Count);
+                int queueSizeGranularity = 10000;
+                if (newProgress.Steps > _currentProgress.Steps || newProgress.QueueSize > _currentProgress.QueueSize + queueSizeGranularity)
+                {
+                    _currentProgress = new Progress(newProgress.Steps, newProgress.QueueSize - newProgress.QueueSize % queueSizeGranularity);
+                    ReportProgress?.Invoke(this, newProgress);
+                }
 
                 var state = Extensions.Clone(movement.State);
 
