@@ -26,10 +26,17 @@ namespace Day11
 
         private string[][] _initialState = new[]
         {
+/*
             new[] { "",  "",   "",   "",   "" },
             new[] { "",  "",   "",   "LG", "" },
             new[] { "",  "HG", "",   "",   "" },
             new[] { "E", "",   "HM", "",   "LM" }
+*/
+
+            new[] { "",   "",     "",     "",     "",     "",     "",     "",    "",    "",    "" },
+            new[] { "",   "",     "",     "",     "",     "",     "",     "",    "",    "",    "" },
+            new[] { "",   "",     "PLM",  "",     "",     "",     "PRM",  "",    "",    "",    "" },
+            new[] { "E",  "PLG",  "",     "THG",  "THM",  "PRG",  "",     "RG",  "RM",  "CG",  "CM" }
         };
 
         public MainWindow()
