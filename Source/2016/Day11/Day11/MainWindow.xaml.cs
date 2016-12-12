@@ -3,6 +3,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -113,14 +115,19 @@ namespace Day11
             if (_gameOver) return;
 
             var tag = (sender as Label).Tag as string;
-            int id = int.Parse(tag);
-            var item = _itemDictionary[tag];
+            ToggleSelect(tag);
+        }
 
-            if (id % Cols == 0) return;
-            if (item.DisplayText == "") return;
+        private bool? ToggleSelect(string idStr)
+        {
+            int id = int.Parse(idStr);
+            var item = _itemDictionary[idStr];
+
+            if (id % Cols == 0) return null;
+            if (item.DisplayText == "") return null;
 
             int row = id / Cols;
-            if (row != _elevatorYPos) return;
+            if (row != _elevatorYPos) return null;
 
             if (item.IsSelected)
                 item.IsSelected = false;
@@ -130,6 +137,8 @@ namespace Day11
                 if (selectedCount < 2)
                     item.IsSelected = true;
             }
+
+            return item.IsSelected;
         }
 
         private void Reset_Click(object sender, RoutedEventArgs e)
@@ -151,10 +160,30 @@ namespace Day11
 
         private void FindSolution_Click(object sender, RoutedEventArgs e)
         {
-            Solver solver = new Solver(_initialState);
-            solver.Solve();
+            Task.Run(() =>
+            {
+                Solver solver = new Solver(_initialState);
+                solver.Solve();
 
-            Reset_Click(null, null);
+                Application.Current.Dispatcher.Invoke(() => Reset_Click(null, null));
+
+                foreach (var mvmnt in solver.Solution)
+                {
+                    foreach (var selection in mvmnt.SelectionXPositions)
+                    {
+                        string id = (mvmnt.ElevatorYPosBefore * Cols + selection).ToString();
+                        bool? toggleResult = null;
+                        Application.Current.Dispatcher.Invoke(() => toggleResult = ToggleSelect(id));
+                    }
+
+                    int dY = mvmnt.MovementDirection == MovementDirection.Up ? -1 : 1;
+                    Application.Current.Dispatcher.Invoke(() =>
+                        MoveElevator(mvmnt.ElevatorYPosBefore + dY)
+                    );
+
+                    Thread.Sleep(1000);
+                }
+            });
         }
 
         public void MoveElevator(int newYPos)
