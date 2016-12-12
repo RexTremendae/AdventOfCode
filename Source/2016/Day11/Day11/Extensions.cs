@@ -1,6 +1,6 @@
 ﻿namespace Day11
 {
-    public static class StringExtensions
+    public static class Extensions
     {
         public static string Last(this string input)
         {
@@ -26,9 +26,9 @@
             return clone;
         }
 
-        public static string[] Clone(string[] input)
+        public static T[] Clone<T>(T[] input)
         {
-            string[] clone = new string[input.Length];
+            T[] clone = new T[input.Length];
 
             for (int i = 0; i < input.Length; i++)
             {

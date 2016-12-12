@@ -22,6 +22,7 @@ namespace Day11
     {
         private Queue<Tuple<Movement, List<Movement>>> _movementQueue;
         private string[][] _initialState;
+        public IEnumerable<Movement> Solution { get; private set; }
 
         public Solver(string[][] initialState)
         {
@@ -29,43 +30,47 @@ namespace Day11
             _movementQueue = new Queue<Tuple<Movement, List<Movement>>>();
         }
 
-        public void EnqueuePossibleMovements(string[][] initialState, List<Movement> visited)
+        public void EnqueuePossibleMovements(string[][] state, int elevatorYPos, List<Movement> visited)
         {
-            int cols = initialState[0].Length;
-            var elevatorY = FindElevatorYPos(initialState);
+            int cols = state[0].Length;
+            //var elevatorY = FindElevatorYPos(initialState);
 
             for (int x = 1; x < cols; x++)
             {
-                if (initialState[elevatorY][x] == string.Empty) continue;
+                if (state[elevatorYPos][x] == string.Empty) continue;
 
-                EnqueueMovements(initialState, elevatorY, new[] { initialState[elevatorY][x] }, visited);
+                EnqueueMovements(state, elevatorYPos, new[] { x }, visited);
 
                 for (int x2 = x + 1; x2 < cols; x2++)
                 {
-                    if (initialState[elevatorY][x2] == string.Empty) continue;
+                    if (state[elevatorYPos][x2] == string.Empty) continue;
 
-                    EnqueueMovements(initialState, elevatorY, new[] { initialState[elevatorY][x], initialState[elevatorY][x2] }, visited);
+                    EnqueueMovements(state, elevatorYPos, new[] { x, x2 }, visited);
                 }
             }
         }
 
-        public void EnqueueMovements(string[][] state, int elevatorY, string[] selection, List<Movement> visited)
+        public void EnqueueMovements(string[][] state, int elevatorY, int[] selectionXPositions, List<Movement> visited)
         {
             Movement movement = new Movement()
             {
-                State = StringExtensions.Clone(state),
+                State = Extensions.Clone(state),
                 ElevatorYPosBefore = elevatorY,
-                Selections = selection,
+                SelectionXPositions = selectionXPositions,
                 MovementDirection = MovementDirection.Up
             };
 
-            if (!visited.Any(x => x.Equals(movement)))
+            if (!visited.Any(x => x.Equals(movement)) && movement.ElevatorYPosBefore > 0)
+            {
                 _movementQueue.Enqueue(Tuple.Create(movement, visited.Clone()));
+            }
 
             movement = movement.Clone();
             movement.MovementDirection = MovementDirection.Down;
-            if (!visited.Any(x => x.Equals(movement)))
+            if (!visited.Any(x => x.Equals(movement)) && movement.ElevatorYPosBefore < state.Length - 1)
+            {
                 _movementQueue.Enqueue(Tuple.Create(movement, visited.Clone()));
+            }
         }
 
         public static bool CheckForFinishedState(string[][] state)
@@ -131,10 +136,61 @@ namespace Day11
             return -1;
         }
 
-        public void Solve()
+        public bool Solve()
         {
-            EnqueuePossibleMovements(_initialState, new List<Movement>());
-            var movement = _movementQueue.Dequeue();
+            Solution = null;
+            EnqueuePossibleMovements(_initialState, _initialState.Length-1, new List<Movement>());
+
+            while (Solution == null)
+            {
+                var dequeued = _movementQueue.Dequeue();
+                var movement = dequeued.Item1;
+                var visited = dequeued.Item2;
+
+                var state = Extensions.Clone(movement.State);
+
+                int dY;
+                if (movement.MovementDirection == MovementDirection.Up)
+                {
+                    dY = -1;
+                }
+                else
+                {
+                    dY = 1;
+                }
+
+                foreach (int x in movement.SelectionXPositions)
+                {
+                    state[movement.ElevatorYPosBefore + dY][x] = state[movement.ElevatorYPosBefore][x];
+                    state[movement.ElevatorYPosBefore][x] = string.Empty;
+
+                    state[movement.ElevatorYPosBefore][0] = string.Empty;
+                    state[movement.ElevatorYPosBefore + dY][0] = "E";
+                }
+
+                List<int> friedChips = new List<int>();
+                friedChips.AddRange(CheckForFriedMicrochips(state, movement.ElevatorYPosBefore));
+                friedChips.AddRange(CheckForFriedMicrochips(state, movement.ElevatorYPosBefore + dY));
+
+                if (friedChips.Count != 0)
+                {
+                    continue;
+                }
+                else
+                {
+                    var visitedClone = visited.Clone();
+                    visitedClone.Add(movement);
+                    EnqueuePossibleMovements(state, movement.ElevatorYPosBefore + dY, visitedClone);
+
+                    if (CheckForFinishedState(state))
+                    {
+                        visited.Add(movement);
+                        Solution = visited;
+                    }
+                }
+            }
+
+            return Solution != null;
         }
     }
 }
