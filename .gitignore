@@ -1,5 +1,9 @@
 bin/
 obj/
 .vs/
+packages/
+
 *.exe
 *.pdb
+*.user
+*ncrunch*
