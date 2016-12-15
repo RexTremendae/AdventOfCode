@@ -42,7 +42,7 @@ namespace Day11
             new[] { "E",  "PLG",  "",     "THG",  "THM",  "PRG",  "",     "RG",  "RM",  "CG",  "CM" }
         };
 
-        private string[][] _initialState = _small;
+        private string[][] _initialState = _large;
 
         //private ICombinator _combinator = new BruteForceCombinator();
         private ICombinator _combinator = new OptimizedCombinator();

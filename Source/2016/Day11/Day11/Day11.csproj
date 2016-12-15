@@ -100,7 +100,7 @@
     </ApplicationDefinition>
     <Compile Include="BruteForceCombinator.cs" />
     <Compile Include="OptimizedCombinator.cs" />
-    <Compile Include="CombinatorTests.cs" />
+    <Compile Include="OptimizedCombinatorTests.cs" />
     <Compile Include="ICombinator.cs" />
     <Compile Include="Movement.cs" />
     <Compile Include="Solver.cs" />

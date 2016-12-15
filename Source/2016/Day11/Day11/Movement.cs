@@ -21,6 +21,24 @@ namespace Day11
             return clone;
         }
 
+        public bool IsReverseOf(Movement otherMovement)
+        {
+            if (otherMovement == null)
+                return false;
+
+            if (MovementDirection == otherMovement.MovementDirection)
+                return false;
+
+            if (SelectionXPositions.Length != otherMovement.SelectionXPositions.Length)
+                return false;
+
+            for (int i = 0; i < SelectionXPositions.Length; i++)
+                if (SelectionXPositions[i] != otherMovement.SelectionXPositions[i])
+                    return false;
+
+            return true;
+        }
+
         public override bool Equals(object obj)
         {
             var other = obj as Movement;

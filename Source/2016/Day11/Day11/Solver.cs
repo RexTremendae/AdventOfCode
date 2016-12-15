@@ -62,6 +62,8 @@ namespace Day11
 
         public void EnqueueMovements(State state, int elevatorY, int[] selectionXPositions, List<Movement> visited)
         {
+            var lastMove = visited.LastOrDefault();
+
             Movement movement = new Movement()
             {
                 State = state.Clone(),
@@ -70,14 +72,14 @@ namespace Day11
                 MovementDirection = MovementDirection.Up
             };
 
-            if (!visited.Any(x => x.Equals(movement)) && movement.ElevatorYPosBefore > 0)
+            if (!visited.Any(x => x.Equals(movement)) && movement.ElevatorYPosBefore > 0 && !movement.IsReverseOf(lastMove))
             {
                 _movementQueue.Enqueue(Tuple.Create(movement, visited.Clone()));
             }
 
             movement = movement.Clone();
             movement.MovementDirection = MovementDirection.Down;
-            if (!visited.Any(x => x.Equals(movement)) && movement.ElevatorYPosBefore < _rows)
+            if (!visited.Any(x => x.Equals(movement)) && movement.ElevatorYPosBefore < _rows && !movement.IsReverseOf(lastMove))
             {
                 _movementQueue.Enqueue(Tuple.Create(movement, visited.Clone()));
             }
