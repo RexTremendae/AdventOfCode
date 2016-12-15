@@ -81,6 +81,65 @@ namespace Day11
                 new[] { 1 }
             });
         }
+
+        [Fact]
+        public void Test5()
+        {
+            State state = new State(new string[][]
+            {
+                new[] { "",  "",   "AG", "",   "" },
+                new[] { "",  "",   "",   "",   "BG" },
+                new[] { "E", "AM", "",   "BM", "" }
+            });
+
+            var combinations = new OptimizedCombinator().GetCombinations(state, 1);
+
+            combinations.ShouldBe(new int[][]
+            {
+                new[] { 1 },
+                new[] { 3 },
+                new[] { 1, 3 },
+            });
+        }
+
+        [Fact]
+        public void Test6()
+        {
+            State state = new State(new string[][]
+            {
+                new[] { "",  "AM", "",   "",   "BG" },
+                new[] { "E", "",   "AG", "BM", "" }
+            });
+
+            var combinations = new OptimizedCombinator().GetCombinations(state, 1);
+
+            combinations.ShouldBe(new int[][]
+            {
+                new[] { 2 },
+                new[] { 3 },
+                new[] { 2, 3 }
+            });
+        }
+
+        [Fact]
+        public void Test7()
+        {
+            State state = new State(new string[][]
+            {
+                new[] { "",  "AM", "",   "",   "" },
+                new[] { "",  "",   "",   "",   "BG" },
+                new[] { "E", "",   "AG", "BM", "" }
+            });
+
+            var combinations = new OptimizedCombinator().GetCombinations(state, 1);
+
+            combinations.ShouldBe(new int[][]
+            {
+                new[] { 2 },
+                new[] { 3 },
+                new[] { 2, 3 }
+            });
+        }
     }
 
     public static class TestExtensions
