@@ -42,7 +42,10 @@ namespace Day11
             new[] { "E",  "PLG",  "",     "THG",  "THM",  "PRG",  "",     "RG",  "RM",  "CG",  "CM" }
         };
 
-        private string[][] _initialState = _large;
+        private string[][] _initialState = _small;
+
+        //private ICombinator _combinator = new BruteForceCombinator();
+        private ICombinator _combinator = new OptimizedCombinator();
 
         public MainWindow()
         {
@@ -192,7 +195,7 @@ namespace Day11
 
         private void FindSolution_Click(object sender, RoutedEventArgs e)
         {
-            Solver solver = new Solver(_initialState);
+            Solver solver = new Solver(_initialState, _combinator);
             Task.Run(() =>
             {
                 solver.ReportProgress += Solver_ReportProgress;
