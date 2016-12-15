@@ -34,6 +34,7 @@ namespace Day11
     {
         private Queue<Tuple<Movement, List<Movement>>> _movementQueue;
         private State _initialState;
+        private ICombinator _combinator;
         public IEnumerable<Movement> Solution { get; private set; }
         private int _cols;
         private int _rows;
@@ -41,8 +42,9 @@ namespace Day11
         public event EventHandler<Progress> ReportProgress;
         Progress _currentProgress;
 
-        public Solver(string[][] initialState)
+        public Solver(string[][] initialState, ICombinator combinator)
         {
+            _combinator = combinator;
             _initialState = new State(initialState);
             _movementQueue = new Queue<Tuple<Movement, List<Movement>>>();
             _currentProgress = new Progress();
@@ -52,20 +54,9 @@ namespace Day11
 
         public void EnqueuePossibleMovements(State state, int elevatorYPos, List<Movement> visited)
         {
-            //var elevatorY = FindElevatorYPos(initialState);
-
-            for (int x = 1; x < _cols; x++)
+            foreach (var combination in _combinator.GetCombinations(state, elevatorYPos))
             {
-                if (state.GetData(x, elevatorYPos) == string.Empty) continue;
-
-                EnqueueMovements(state, elevatorYPos, new[] { x }, visited);
-
-                for (int x2 = x + 1; x2 < _cols; x2++)
-                {
-                    if (state.GetData(x2, elevatorYPos) == string.Empty) continue;
-
-                    EnqueueMovements(state, elevatorYPos, new[] { x, x2 }, visited);
-                }
+                EnqueueMovements(state, elevatorYPos, combination, visited);
             }
         }
 

@@ -5,7 +5,7 @@ namespace Day11
 {
     public class State
     {
-        private class StateStorage
+        public class StateStorage
         {
             public StateStorage(int x, int y, string data)
             {
@@ -19,7 +19,7 @@ namespace Day11
             public string Data { get; }
         }
 
-        private StateStorage[] _storage;
+        public StateStorage[] Storage;
  
         public int Width { get; }
         public int Height { get; }
@@ -28,7 +28,7 @@ namespace Day11
         {
             Width = widht;
             Height = height;
-            _storage = storage;
+            Storage = storage;
         }
 
         public State(string[][] rawState)
@@ -46,7 +46,7 @@ namespace Day11
                         storageList.Add(new StateStorage(x, y, data));
                 }
 
-            _storage = storageList.ToArray();
+            Storage = storageList.ToArray();
         }
 
         public string[][] Expand()
@@ -60,7 +60,7 @@ namespace Day11
                     expandedstate[y][x] = string.Empty;
             }
 
-            foreach (var data in _storage)
+            foreach (var data in Storage)
             {
                 expandedstate[data.YPos][data.XPos] = data.Data;
             }
@@ -70,7 +70,7 @@ namespace Day11
 
         public State Clone()
         {
-            return new State(Width, Height, Extensions.Clone(_storage));
+            return new State(Width, Height, Extensions.Clone(Storage));
         }
 
         public override bool Equals(object obj)
@@ -80,9 +80,9 @@ namespace Day11
 
             if (other.Width != Width || other.Height != Height) return false;
 
-            foreach (var data in _storage)
+            foreach (var data in Storage)
             {
-                var otherData = other._storage.SingleOrDefault(x => x.Data == data.Data);
+                var otherData = other.Storage.SingleOrDefault(x => x.Data == data.Data);
                 if (otherData == null) return false;
                 if (otherData.XPos != data.XPos || otherData.YPos != data.YPos) return false;
             }
@@ -95,24 +95,24 @@ namespace Day11
             var newData = new StateStorage(x, y, data);
 
             int index = 0;
-            for (; index < _storage.Length; index++)
-                if (_storage[index].Data == data)
+            for (; index < Storage.Length; index++)
+                if (Storage[index].Data == data)
                 {
-                    _storage[index] = newData;
+                    Storage[index] = newData;
                     return;
                 }
 
-            var newStorage = new StateStorage[_storage.Length + 1];
-            for (int i = 0; i < _storage.Length; i++)
-                newStorage[i] = _storage[i];
+            var newStorage = new StateStorage[Storage.Length + 1];
+            for (int i = 0; i < Storage.Length; i++)
+                newStorage[i] = Storage[i];
 
-            newStorage[_storage.Length] = newData;
-            _storage = newStorage;
+            newStorage[Storage.Length] = newData;
+            Storage = newStorage;
         }
 
         public string GetData(int x, int y)
         {
-            var hit = _storage.SingleOrDefault(d => d.XPos == x && d.YPos == y);
+            var hit = Storage.SingleOrDefault(d => d.XPos == x && d.YPos == y);
 
             return hit == null ? string.Empty : hit.Data;
         }
