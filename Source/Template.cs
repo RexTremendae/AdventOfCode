@@ -110,6 +110,11 @@ namespace Day2
 
             return X == otherPoint.X && Y == otherPoint.Y;
         }
+
+        public override string ToString()
+        {
+            return $"({X}, {Y})";
+        }
     }
 
     public static class MD5
