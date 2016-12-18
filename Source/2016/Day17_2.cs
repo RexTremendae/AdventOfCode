@@ -33,16 +33,25 @@ namespace Day17
 
             _seed = reader.ReadLine();
             Enqueue("", new Point(0,0));
+            long longestPath = 0;
+
             while (_queue.Count > 0)
             {
                 var current = _queue.Dequeue();
                 if (current.Item3.X == 3 && current.Item3.Y == 3)
                 {
-                    WriteLine(current.Item1);
-                    break;
+                    var currentPathLength = current.Item1.Length;
+                    if (currentPathLength > longestPath)
+                    {
+                        longestPath = currentPathLength;
+                        //WriteLine(longestPath);
+                    }
                 }
-                Enqueue(current.Item1, current.Item3);
+                else
+                    Enqueue(current.Item1, current.Item3);
             }
+
+            WriteLine(longestPath);
         }
 
         private bool IsOpen(char c)
