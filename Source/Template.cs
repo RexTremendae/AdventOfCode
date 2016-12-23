@@ -5,8 +5,10 @@ using System.Linq;
 using System.Text;
 
 using static System.Console;
+using static System.ConsoleColor;
+using static Day.ColorWriter;
 
-namespace Day2
+namespace Day
 {
     public class Program
     {
@@ -136,6 +138,23 @@ namespace Day2
             }
 
             return sb.ToString();
+        }
+    }
+
+    public static class ColorWriter
+    {
+        public static void Write(string text, ConsoleColor color)
+        {
+            var oldColor = ForegroundColor;
+            ForegroundColor = color;
+            Console.Write(text);
+            ForegroundColor = oldColor;
+        }
+
+        public static void WriteLine(string text, ConsoleColor color)
+        {
+            Write(text, color);
+            Console.WriteLine();
         }
     }
 }
