@@ -105,128 +105,73 @@ namespace Day20
             _testCases.Add(new IntervalTestCase
             {
                 Id = 1,
-                InitialState = new Interval[] {},
-                IntervalToAdd = new Interval { Min = 1, Max = 2 },
-                ExpectedResult = new [] { new Interval {Min = 1, Max = 2 }}
+                InitialState =   "",
+                IntervalToAdd =  " []",
+                ExpectedResult = " []"
             });
 
             _testCases.Add(new IntervalTestCase
             {
                 Id = 2,
-                InitialState = new Interval[]
-                {
-                    new Interval { Min = 5, Max = 6 }
-                },
-                IntervalToAdd = new Interval { Min = 1, Max = 2 },
-                ExpectedResult = new []
-                {
-                    new Interval { Min = 1, Max = 2 },
-                    new Interval { Min = 5, Max = 6 }
-                }
+                InitialState =   "     [-]",
+                IntervalToAdd =  " [-]",
+                ExpectedResult = " [-] [-]"
             });
 
             _testCases.Add(new IntervalTestCase
             {
                 Id = 3,
-                InitialState = new Interval[]
-                {
-                    new Interval { Min = 1, Max = 2 },
-                    new Interval { Min = 8, Max = 9 }
-                },
-                IntervalToAdd = new Interval { Min = 4, Max = 5 },
-                ExpectedResult = new []
-                {
-                    new Interval { Min = 1, Max = 2 },
-                    new Interval { Min = 4, Max = 5 },
-                    new Interval { Min = 8, Max = 9 }
-                }
+                InitialState =   " [-]     [-]",
+                IntervalToAdd =  "     [-]",
+                ExpectedResult = " [-] [-] [-]"
             });
 
             _testCases.Add(new IntervalTestCase
             {
                 Id = 4,
-                InitialState = new Interval[]
-                {
-                    new Interval { Min = 1, Max = 4 },
-                },
-                IntervalToAdd = new Interval { Min = 4, Max = 5 },
-                ExpectedResult = new []
-                {
-                    new Interval { Min = 1, Max = 5 }
-                }
+                InitialState =   " [--]",
+                IntervalToAdd =  "    [-]",
+                ExpectedResult = " [----]"
             });
 
             _testCases.Add(new IntervalTestCase
             {
                 Id = 5,
-                InitialState = new Interval[]
-                {
-                    new Interval { Min = 7, Max = 10 },
-                },
-                IntervalToAdd = new Interval { Min = 6, Max = 7 },
-                ExpectedResult = new []
-                {
-                    new Interval { Min = 6, Max = 10 }
-                }
+                InitialState =   "   [--]",
+                IntervalToAdd =  " [-]",
+                ExpectedResult = " [----]"
             });
 
             _testCases.Add(new IntervalTestCase
             {
                 Id = 6,
-                InitialState = new Interval[]
-                {
-                    new Interval { Min = 5, Max = 10 },
-                },
-                IntervalToAdd = new Interval { Min = 6, Max = 7 },
-                ExpectedResult = new []
-                {
-                    new Interval { Min = 5, Max = 10 }
-                }
+                InitialState =   " [----]",
+                IntervalToAdd =  "  [-]",
+                ExpectedResult = " [----]"
             });
 
             _testCases.Add(new IntervalTestCase
             {
                 Id = 7,
-                InitialState = new Interval[]
-                {
-                    new Interval { Min = 6, Max = 8 },
-                },
-                IntervalToAdd = new Interval { Min = 5, Max = 9 },
-                ExpectedResult = new []
-                {
-                    new Interval { Min = 5, Max = 9 }
-                }
+                InitialState =   "  [-]",
+                IntervalToAdd =  " [---]",
+                ExpectedResult = " [---]"
             });
 
             _testCases.Add(new IntervalTestCase
             {
                 Id = 8,
-                InitialState = new Interval[]
-                {
-                    new Interval { Min = 2, Max = 4 },
-                    new Interval { Min = 6, Max = 8 },
-                },
-                IntervalToAdd = new Interval { Min = 4, Max = 6 },
-                ExpectedResult = new []
-                {
-                    new Interval { Min = 2, Max = 8 }
-                }
+                InitialState =   " [-] [-]",
+                IntervalToAdd =  "   [-]",
+                ExpectedResult = " [-----]"
             });
 
             _testCases.Add(new IntervalTestCase
             {
                 Id = 9,
-                InitialState = new Interval[]
-                {
-                    new Interval { Min = 1, Max = 3 },
-                    new Interval { Min = 5, Max = 7 },
-                    new Interval { Min = 9, Max = 11 }
-                },
-                IntervalToAdd = new Interval { Min = 2, Max = 10 },
-                ExpectedResult = new []
-                {
-                    new Interval { Min = 1, Max = 11 }
-                }
+                InitialState =   " [-] [-] [-]",
+                IntervalToAdd =  "  [-------]",
+                ExpectedResult = " [---------]"
             });
         }
 
@@ -241,10 +186,10 @@ namespace Day20
                 bool success = true;
                 bool firstFail = true;
 
-                IntervalMerger merger = new IntervalMerger(testcase.InitialState);
-                merger.Add(testcase.IntervalToAdd);
+                IntervalMerger merger = new IntervalMerger(testcase.InitialStateAsIntervals);
+                merger.Add(testcase.IntervalToAddAsInterval);
                 
-                var expected = testcase.ExpectedResult.ToArray();
+                var expected = testcase.ExpectedResultAsIntervals.ToArray();
                 var actual = merger.Intervals.ToArray();
 
                 if (actual.Count() != expected.Count())
@@ -260,7 +205,7 @@ namespace Day20
                     success = false;
                 }
 
-                for (int i = 0; i < testcase.ExpectedResult.Length; i++)
+                for (int i = 0; i < testcase.ExpectedResultAsIntervals.Length; i++)
                 {
                     if (expected[i].Min != actual[i].Min || expected[i].Max != actual[i].Max)
                     {
@@ -286,9 +231,70 @@ namespace Day20
         private class IntervalTestCase
         {
             public int Id;
-            public Interval[] InitialState;
-            public Interval[] ExpectedResult;
-            public Interval IntervalToAdd;
+            private string _initalState;
+            private string _expectedResult;
+            private string _intervalToAdd;
+
+            public string InitialState
+            {
+                get { return _initalState; }
+                set
+                {
+                    _initalState = value;
+                    InitialStateAsIntervals = ToIntervals(_initalState);
+                }
+            }
+
+            public string ExpectedResult
+            {
+                get { return _expectedResult; }
+                set
+                {
+                    _expectedResult = value;
+                    ExpectedResultAsIntervals = ToIntervals(_expectedResult);
+                }
+            }
+
+            public string IntervalToAdd
+            {
+                get { return _intervalToAdd; }
+                set
+                {
+                    _intervalToAdd = value;
+                    IntervalToAddAsInterval = ToIntervals(_intervalToAdd).Single();
+                }
+            }
+
+            private Interval[] ToIntervals(string input)
+            {
+                var intervals = new List<Interval>();
+                int openIndex = -1;
+
+                for (int i = 0; i < input.Length; i++)
+                {
+                    if (input[i] == '[')
+                    {
+                        openIndex = i;
+                    }
+                    else if (input[i] == ']')
+                    {
+                        if (openIndex < 0)
+                            throw new InvalidOperationException("Invalid inteval!");
+
+                        intervals.Add(new Interval { Min = openIndex, Max = i });
+                        openIndex = -1;
+                    }
+                }
+
+                if (openIndex >= 0)
+                    throw new InvalidOperationException("Invalid inteval!");
+
+                return intervals.ToArray();
+            }
+
+            public Interval[] InitialStateAsIntervals;
+            public Interval[] ExpectedResultAsIntervals;
+            public Interval IntervalToAddAsInterval;
         }
     }
 
