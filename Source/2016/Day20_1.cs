@@ -239,6 +239,7 @@ namespace Day20
                 Write($"Running testcase #{testcase.Id}... ", DarkYellow);
 
                 bool success = true;
+                bool firstFail = true;
 
                 IntervalMerger merger = new IntervalMerger(testcase.InitialState);
                 merger.Add(testcase.IntervalToAdd);
@@ -248,6 +249,12 @@ namespace Day20
 
                 if (actual.Count() != expected.Count())
                 {
+                    if (firstFail)
+                    {
+                        firstFail = false;
+                        WriteLine();
+                    }
+
                     Write($"Testcase #{testcase.Id} failed! ", Red);
                     WriteLine($"Number of intervals mismatched, expected: {expected.Count()}, actual: {actual.Count()}");
                     success = false;
@@ -257,6 +264,12 @@ namespace Day20
                 {
                     if (expected[i].Min != actual[i].Min || expected[i].Max != actual[i].Max)
                     {
+                        if (firstFail)
+                        {
+                            firstFail = false;
+                            WriteLine();
+                        }
+
                         Write($"Testcase #{testcase.Id} failed! ", Red);
                         WriteLine($"Interval {i} mismatched, expected: [{expected[i].Min} - {expected[i].Max}], actual: [{actual[i].Min} - {actual[i].Max}]");
                         success = false;
