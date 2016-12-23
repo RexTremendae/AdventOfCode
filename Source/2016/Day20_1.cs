@@ -64,7 +64,7 @@ namespace Day20
             {
                 existing = _intervals[i];
 
-                if (existing.Min > newInterval.Max)
+                if (existing.Min > newInterval.Max+1)
                 {
                     _intervals.Insert(i, newInterval);
                     i++;
@@ -74,7 +74,7 @@ namespace Day20
                 //WriteLine($"[{i}]   Exst: [{existing.Min} - {existing.Max}]   New: [{newInterval.Min} - {newInterval.Max}]" , Cyan);
 
                 // Existing interval overlaps new inteval
-                if (existing.Max >= newInterval.Min && newInterval.Max >= existing.Min)
+                if (existing.Max+1 >= newInterval.Min && newInterval.Max+1 >= existing.Min)
                 {
                     if (existing.Min > newInterval.Min)
                     {
@@ -189,6 +189,30 @@ namespace Day20
                 IntervalToAdd =  "  [-------]",
                 ExpectedResult = " [---------]"
             });
+
+            _testCases.Add(new IntervalTestCase
+            {
+                Id = 10,
+                InitialState =   " [-] ",
+                IntervalToAdd =  "    [-]",
+                ExpectedResult = " [----]"
+            });
+
+            _testCases.Add(new IntervalTestCase
+            {
+                Id = 11,
+                InitialState =   "    [-]",
+                IntervalToAdd =  " [-]",
+                ExpectedResult = " [----]"
+            });
+
+            _testCases.Add(new IntervalTestCase
+            {
+                Id = 12,
+                InitialState =   " [-]   [-]",
+                IntervalToAdd =  "    [-]",
+                ExpectedResult = " [-------]"
+            });
         }
 
         public static void Run()
@@ -213,11 +237,10 @@ namespace Day20
                     if (firstFail)
                     {
                         firstFail = false;
-                        WriteLine();
+                        WriteLine($"Testcase #{testcase.Id} failed! ", Red);
                     }
 
-                    Write($"Testcase #{testcase.Id} failed! ", Red);
-                    WriteLine($"Number of intervals mismatched, expected: {expected.Count()}, actual: {actual.Count()}");
+                    WriteLine($"* Number of intervals mismatched, expected: {expected.Count()}, actual: {actual.Count()}");
                     success = false;
                 }
 
@@ -228,11 +251,10 @@ namespace Day20
                         if (firstFail)
                         {
                             firstFail = false;
-                            WriteLine();
+                            WriteLine($"Testcase #{testcase.Id} failed! ", Red);
                         }
 
-                        Write($"Testcase #{testcase.Id} failed! ", Red);
-                        WriteLine($"Interval {i} mismatched, expected: [{expected[i].Min} - {expected[i].Max}], actual: [{actual[i].Min} - {actual[i].Max}]");
+                        WriteLine($"* Interval {i} mismatched, expected: [{expected[i].Min} - {expected[i].Max}], actual: [{actual[i].Min} - {actual[i].Max}]");
                         success = false;
                     }
                 }
