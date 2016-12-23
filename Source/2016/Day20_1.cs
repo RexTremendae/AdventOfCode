@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 
 using static System.Console;
+using static System.ConsoleColor;
+using static Day20.ColorWriter;
 
 namespace Day20
 {
@@ -207,7 +209,23 @@ namespace Day20
                 IntervalToAdd = new Interval { Min = 4, Max = 6 },
                 ExpectedResult = new []
                 {
-                    new Interval { Min = 2, Max = 4 }
+                    new Interval { Min = 2, Max = 8 }
+                }
+            });
+
+            _testCases.Add(new IntervalTestCase
+            {
+                Id = 9,
+                InitialState = new Interval[]
+                {
+                    new Interval { Min = 1, Max = 3 },
+                    new Interval { Min = 5, Max = 7 },
+                    new Interval { Min = 9, Max = 11 }
+                },
+                IntervalToAdd = new Interval { Min = 2, Max = 10 },
+                ExpectedResult = new []
+                {
+                    new Interval { Min = 1, Max = 11 }
                 }
             });
         }
@@ -216,45 +234,39 @@ namespace Day20
         {
             Setup();
 
-            bool success = true;
             foreach (var testcase in _testCases)
             {
+                Write($"Running testcase #{testcase.Id}... ", DarkYellow);
+
+                bool success = true;
+
                 IntervalMerger merger = new IntervalMerger(testcase.InitialState);
                 merger.Add(testcase.IntervalToAdd);
                 
-                if (merger.Intervals.Count() != testcase.ExpectedResult.Count())
+                var expected = testcase.ExpectedResult.ToArray();
+                var actual = merger.Intervals.ToArray();
+
+                if (actual.Count() != expected.Count())
                 {
-                    var color = ForegroundColor;
-                    ForegroundColor = ConsoleColor.Red;
-                    Write($"Testcase #{testcase.Id} failed! ");
-                    ForegroundColor = color;
-                    WriteLine($"Number of intervals mismatched, actually: {merger.Intervals.Count()}, expected: {testcase.ExpectedResult.Count()}");
+                    Write($"Testcase #{testcase.Id} failed! ", Red);
+                    WriteLine($"Number of intervals mismatched, expected: {expected.Count()}, actual: {actual.Count()}");
                     success = false;
                 }
 
                 for (int i = 0; i < testcase.ExpectedResult.Length; i++)
                 {
-                    var expected = testcase.ExpectedResult.ToArray();
-                    var actual = merger.Intervals.ToArray();
-
                     if (expected[i].Min != actual[i].Min || expected[i].Max != actual[i].Max)
                     {
-                        var color = ForegroundColor;
-                        ForegroundColor = ConsoleColor.Red;
-                        Write($"Testcase #{testcase.Id} failed! ");
-                        ForegroundColor = color;
+                        Write($"Testcase #{testcase.Id} failed! ", Red);
                         WriteLine($"Interval {i} mismatched, expected: [{expected[i].Min} - {expected[i].Max}], actual: [{actual[i].Min} - {actual[i].Max}]");
                         success = false;
                     }
                 }
-            }
 
-            if (success)
-            {
-                var color = ForegroundColor;
-                ForegroundColor = ConsoleColor.Green;
-                WriteLine("All test cases succeeded!");
-                ForegroundColor = color;
+                if (success)
+                {
+                    WriteLine($"Test case #{testcase.Id} succeeded!", Green);
+                }
             }
         }
 
@@ -267,12 +279,29 @@ namespace Day20
         }
     }
 
-        interface IReader
+    public static class ColorWriter
+    {
+        public static void Write(string text, ConsoleColor color)
+        {
+            var oldColor = ForegroundColor;
+            ForegroundColor = color;
+            Console.Write(text);
+            ForegroundColor = oldColor;
+        }
+
+        public static void WriteLine(string text, ConsoleColor color)
+        {
+            Write(text, color);
+            Console.WriteLine();
+        }
+    }
+
+    interface IReader
     {
         string ReadLine();
         bool EndOfStream { get; }
     }
-
+    
     public class ConsoleReader : IReader
     {
         public string ReadLine()
