@@ -29,13 +29,33 @@ namespace Day20
                 reader = new ConsoleReader();
             }
 
-            IntervalMergerTests.Run();
-            return;
+            // Test code...
+            //IntervalMergerTests.Run();
+            //return;
+
+            IntervalMerger intervalMerger = new IntervalMerger();
             while (!reader.EndOfStream)
             {
                 var input = reader.ReadLine();
                 if (string.IsNullOrEmpty(input)) break;
+
+                //WriteLine($"Parsing {input}...");
+                var split = input.Split('-');
+                var min = long.Parse(split[0]);
+                var max = long.Parse(split[1]);
+                var newInterval = new Interval { Min = min, Max = max };
+                intervalMerger.Add(newInterval);
             }
+/*
+            foreach (var itvl in intervalMerger.Intervals)
+            {
+                Write(itvl.Min);
+                Write("-", Green);
+                Write(itvl.Max);
+
+                WriteLine();
+            }
+*/
         }
     }
 
@@ -47,7 +67,9 @@ namespace Day20
         public IntervalMerger(IEnumerable<Interval> intervals = null)
         {
             _intervals = new List<Interval>();
-            _intervals.AddRange(intervals);
+
+            if (intervals != null)
+                _intervals.AddRange(intervals);
         }
 
         public void Add(Interval newInterval)
@@ -106,8 +128,8 @@ namespace Day20
 
     public class Interval
     {
-        public int Min;
-        public int Max;
+        public long Min;
+        public long Max;
     }
 
     public static class IntervalMergerTests
