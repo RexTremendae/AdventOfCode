@@ -30,8 +30,8 @@ namespace Day20
             }
 
             // Test code...
-            //IntervalMergerTests.Run();
-            //return;
+            IntervalMergerTests.Run();
+            return;
 
             IntervalMerger intervalMerger = new IntervalMerger();
             while (!reader.EndOfStream)
@@ -159,6 +159,14 @@ namespace Day20
             _testCases.Add(new IntervalTestCase
             {
                 Id = 3,
+                InitialState =   "     [-] [-]",
+                IntervalToAdd =  " [-]",
+                ExpectedResult = " [-] [-] [-]"
+            });
+
+            _testCases.Add(new IntervalTestCase
+            {
+                Id = 4,
                 InitialState =   " [-]     [-]",
                 IntervalToAdd =  "     [-]",
                 ExpectedResult = " [-] [-] [-]"
@@ -166,7 +174,7 @@ namespace Day20
 
             _testCases.Add(new IntervalTestCase
             {
-                Id = 4,
+                Id = 5,
                 InitialState =   " [--]",
                 IntervalToAdd =  "    [-]",
                 ExpectedResult = " [----]"
@@ -174,7 +182,7 @@ namespace Day20
 
             _testCases.Add(new IntervalTestCase
             {
-                Id = 5,
+                Id = 6,
                 InitialState =   "   [--]",
                 IntervalToAdd =  " [-]",
                 ExpectedResult = " [----]"
@@ -182,7 +190,7 @@ namespace Day20
 
             _testCases.Add(new IntervalTestCase
             {
-                Id = 6,
+                Id = 7,
                 InitialState =   " [----]",
                 IntervalToAdd =  "  [-]",
                 ExpectedResult = " [----]"
@@ -190,7 +198,7 @@ namespace Day20
 
             _testCases.Add(new IntervalTestCase
             {
-                Id = 7,
+                Id = 8,
                 InitialState =   "  [-]",
                 IntervalToAdd =  " [---]",
                 ExpectedResult = " [---]"
@@ -198,7 +206,7 @@ namespace Day20
 
             _testCases.Add(new IntervalTestCase
             {
-                Id = 8,
+                Id = 9,
                 InitialState =   " [-] [-]",
                 IntervalToAdd =  "   [-]",
                 ExpectedResult = " [-----]"
@@ -206,7 +214,7 @@ namespace Day20
 
             _testCases.Add(new IntervalTestCase
             {
-                Id = 9,
+                Id = 10,
                 InitialState =   " [-] [-] [-]",
                 IntervalToAdd =  "  [-------]",
                 ExpectedResult = " [---------]"
@@ -214,7 +222,7 @@ namespace Day20
 
             _testCases.Add(new IntervalTestCase
             {
-                Id = 10,
+                Id = 11,
                 InitialState =   " [-] ",
                 IntervalToAdd =  "    [-]",
                 ExpectedResult = " [----]"
@@ -222,7 +230,7 @@ namespace Day20
 
             _testCases.Add(new IntervalTestCase
             {
-                Id = 11,
+                Id = 12,
                 InitialState =   "    [-]",
                 IntervalToAdd =  " [-]",
                 ExpectedResult = " [----]"
@@ -230,7 +238,7 @@ namespace Day20
 
             _testCases.Add(new IntervalTestCase
             {
-                Id = 12,
+                Id = 13,
                 InitialState =   " [-]   [-]",
                 IntervalToAdd =  "    [-]",
                 ExpectedResult = " [-------]"
