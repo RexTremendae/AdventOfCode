@@ -54,37 +54,53 @@ namespace Day20
         {
             int i = 0;
 
-            bool overlap = false;
             Interval existing = null;
+            Interval previous = null;
 
+            bool handled = false;
+            
+            //WriteLine();
             for (i = 0; i < _intervals.Count; i ++)
             {
                 existing = _intervals[i];
 
                 if (existing.Min > newInterval.Max)
                 {
-                    break;
+                    _intervals.Insert(i, newInterval);
+                    i++;
+                    handled = true;
                 }
 
+                //WriteLine($"[{i}]   Exst: [{existing.Min} - {existing.Max}]   New: [{newInterval.Min} - {newInterval.Max}]" , Cyan);
+
+                // Existing interval overlaps new inteval
                 if (existing.Max >= newInterval.Min && newInterval.Max >= existing.Min)
                 {
-                    overlap = true;
-                    break;
+                    if (existing.Min > newInterval.Min)
+                    {
+                        existing.Min = newInterval.Min;
+                    }
+
+                    if (existing.Max < newInterval.Max)
+                    {
+                        existing.Max = newInterval.Max;
+                    }
+
+                    newInterval = existing;
+                    handled = true;
+
+                    if (previous != null && previous.Max >= newInterval.Min)
+                    {
+                        _intervals.RemoveAt(i-1);
+                        i--;
+                    }
                 }
+
+                previous = existing;
             }
 
-            if (i >= _intervals.Count)
+            if (!handled)
                 _intervals.Add(newInterval);
-            else if(overlap)
-            {
-                if (existing.Min > newInterval.Min)
-                    existing.Min = newInterval.Min;
-
-                if (existing.Max < newInterval.Max)
-                    existing.Max = newInterval.Max;
-            }
-            else
-                _intervals.Insert(i, newInterval);
         }
     }
 
@@ -188,7 +204,7 @@ namespace Day20
 
                 IntervalMerger merger = new IntervalMerger(testcase.InitialStateAsIntervals);
                 merger.Add(testcase.IntervalToAddAsInterval);
-                
+
                 var expected = testcase.ExpectedResultAsIntervals.ToArray();
                 var actual = merger.Intervals.ToArray();
 
