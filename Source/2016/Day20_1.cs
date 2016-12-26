@@ -30,8 +30,8 @@ namespace Day20
             }
 
             // Test code...
-            IntervalMergerTests.Run();
-            return;
+            //IntervalMergerTests.Run();
+            //return;
 
             IntervalMerger intervalMerger = new IntervalMerger();
             while (!reader.EndOfStream)
@@ -41,12 +41,13 @@ namespace Day20
 
                 //WriteLine($"Parsing {input}...");
                 var split = input.Split('-');
+
                 var min = long.Parse(split[0]);
                 var max = long.Parse(split[1]);
                 var newInterval = new Interval { Min = min, Max = max };
                 intervalMerger.Add(newInterval);
             }
-/*
+
             foreach (var itvl in intervalMerger.Intervals)
             {
                 Write(itvl.Min);
@@ -55,7 +56,6 @@ namespace Day20
 
                 WriteLine();
             }
-*/
         }
     }
 
@@ -86,7 +86,7 @@ namespace Day20
             {
                 existing = _intervals[i];
 
-                if (existing.Min > newInterval.Max+1)
+                if (!handled && existing.Min > newInterval.Max+1)
                 {
                     _intervals.Insert(i, newInterval);
                     i++;
