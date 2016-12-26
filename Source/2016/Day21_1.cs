@@ -5,7 +5,9 @@ using System.Linq;
 using System.Text;
  
 using static System.Console;
- 
+using static System.ConsoleColor;
+using static Day21.ColorWriter;
+
 namespace Day21
 {
     public class Program
@@ -38,6 +40,7 @@ namespace Day21
                 try
                 {
                     DoOperation(sb, input);
+                    //PrintResult(sb.ToString(), opIdx);
                     opIdx++;
                 }
                 catch
@@ -48,7 +51,15 @@ namespace Day21
             }
             WriteLine(sb.ToString());
         }
- 
+
+        void PrintResult(string data, int opIdx)
+        {
+            Write("After operation ");
+            Write(opIdx.ToString(), Cyan);
+            Write(": ");
+            WriteLine(data, Green);
+        }
+
         void DoOperation(StringBuilder sb, string input)
         {
             var split = input.Split(' ');
@@ -67,8 +78,12 @@ namespace Day21
                 {
                     char letterX = split[2][0];
                     char letterY = split[5][0];
- 
+
+                    char tempReplacement = '¤';
+
+                    sb.Replace(letterY, tempReplacement);
                     sb.Replace(letterX, letterY);
+                    sb.Replace(tempReplacement, letterX);
                 }
                 else
                 {
@@ -187,6 +202,23 @@ namespace Day21
             {
                 return _reader.EndOfStream;
             }
+        }
+    }
+
+    public static class ColorWriter
+    {
+        public static void Write(string text, ConsoleColor color)
+        {
+            var oldColor = ForegroundColor;
+            ForegroundColor = color;
+            Console.Write(text);
+            ForegroundColor = oldColor;
+        }
+
+        public static void WriteLine(string text, ConsoleColor color)
+        {
+            Write(text, color);
+            Console.WriteLine();
         }
     }
 }
