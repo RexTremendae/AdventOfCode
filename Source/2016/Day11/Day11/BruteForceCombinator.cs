@@ -4,6 +4,8 @@ namespace Day11
 {
     public class BruteForceCombinator : ICombinator
     {
+        public string Name => "BruteForceCombinator";
+
         public IEnumerable<int[]> GetCombinations(State state, int elevatorYPos)
         {
             for (int x = 1; x < state.Width; x++)

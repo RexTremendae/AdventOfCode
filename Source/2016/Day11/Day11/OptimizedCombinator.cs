@@ -4,6 +4,65 @@ namespace Day11
 {
     public class OptimizedCombinator : ICombinator
     {
+        public string Name => "OptimizedCombinator";
+
+        public IEnumerable<int[]> GetCombinations(State state, int elevatorYPos)
+        {
+            var previousCombinations = new List<Combination>();
+            var pairs = new Dictionary<int, Pair>();
+
+            for (int x = 1; x < state.Width; x += 2)
+            {
+                Pair p = new Pair { Generator = x, Microship = x + 1 };
+                pairs.Add(x, p);
+                pairs.Add(x + 1, p);
+            }
+
+            for (int x = 1; x < state.Width; x++)
+            {
+                if (state.GetData(x, elevatorYPos) == string.Empty) continue;
+                bool combinationAlreadyExists = false;
+                Combination combo = new Combination(new[] { x }, state, pairs);
+
+                foreach (var c in previousCombinations)
+                {
+                    if (c.IsSameAs(combo))
+                    {
+                        combinationAlreadyExists = true;
+                        break;
+                    }
+                }
+
+                if (!combinationAlreadyExists)
+                {
+                    yield return combo.Combo;
+                    previousCombinations.Add(combo);
+                }
+
+                for (int x2 = x + 1; x2 < state.Width; x2++)
+                {
+                    if (state.GetData(x2, elevatorYPos) == string.Empty) continue;
+
+                    combinationAlreadyExists = false;
+                    combo = new Combination(new[] { x, x2 }, state, pairs);
+                    foreach (var c in previousCombinations)
+                    {
+                        if (c.IsSameAs(combo))
+                        {
+                            combinationAlreadyExists = true;
+                            break;
+                        }
+                    }
+
+                    if (!combinationAlreadyExists)
+                    {
+                        previousCombinations.Add(combo);
+                        yield return combo.Combo;
+                    }
+                }
+            }
+        }
+
         private class Pair
         {
             public int Generator;
@@ -71,63 +130,6 @@ namespace Day11
                     }
 
                     return false;
-                }
-            }
-        }
-
-        public IEnumerable<int[]> GetCombinations(State state, int elevatorYPos)
-        {
-            var previousCombinations = new List<Combination>();
-            var pairs = new Dictionary<int, Pair>();
-
-            for (int x = 1; x < state.Width; x+=2)
-            {
-                Pair p = new Pair { Generator = x, Microship = x+1 };
-                pairs.Add(x, p);
-                pairs.Add(x+1, p);
-            }
-
-            for (int x = 1; x < state.Width; x++)
-            {
-                if (state.GetData(x, elevatorYPos) == string.Empty) continue;
-                bool combinationAlreadyExists = false;
-                Combination combo = new Combination(new[] { x }, state, pairs);
-
-                foreach (var c in previousCombinations)
-                {
-                    if (c.IsSameAs(combo))
-                    {
-                        combinationAlreadyExists = true;
-                        break;
-                    }
-                }
-
-                if (!combinationAlreadyExists)
-                {
-                    yield return combo.Combo;
-                    previousCombinations.Add(combo);
-                }
-
-                for (int x2 = x + 1; x2 < state.Width; x2++)
-                {
-                    if (state.GetData(x2, elevatorYPos) == string.Empty) continue;
-
-                    combinationAlreadyExists = false;
-                    combo = new Combination(new[] { x, x2 }, state, pairs);
-                    foreach (var c in previousCombinations)
-                    {
-                        if (c.IsSameAs(combo))
-                        {
-                            combinationAlreadyExists = true;
-                            break;
-                        }
-                    }
-
-                    if (!combinationAlreadyExists)
-                    {
-                        previousCombinations.Add(combo);
-                        yield return combo.Combo;
-                    }
                 }
             }
         }

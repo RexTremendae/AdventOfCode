@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Day11
 {
@@ -38,11 +39,11 @@ namespace Day11
         public IEnumerable<Movement> Solution { get; private set; }
         private int _cols;
         private int _rows;
-                
+        private CancellationToken _cancellationToken;
         public event EventHandler<Progress> ReportProgress;
         Progress _currentProgress;
 
-        public Solver(string[][] initialState, ICombinator combinator)
+        public Solver(string[][] initialState, ICombinator combinator, CancellationToken cancellationToken)
         {
             _combinator = combinator;
             _initialState = new State(initialState);
@@ -50,6 +51,7 @@ namespace Day11
             _currentProgress = new Progress();
             _cols = initialState[0].Length;
             _rows = initialState.Length;
+            _cancellationToken = cancellationToken;
         }
 
         public void EnqueuePossibleMovements(State state, int elevatorYPos, List<Movement> visited)
@@ -160,7 +162,7 @@ namespace Day11
                 var visited = dequeued.Item2;
 
                 Progress newProgress = new Progress(visited.Count, _movementQueue.Count);
-                int queueSizeGranularity = 10000;
+                int queueSizeGranularity = 10_000;
                 if (newProgress.Steps > _currentProgress.Steps || newProgress.QueueSize > _currentProgress.QueueSize + queueSizeGranularity)
                 {
                     _currentProgress = new Progress(newProgress.Steps, newProgress.QueueSize - newProgress.QueueSize % queueSizeGranularity);
@@ -211,6 +213,8 @@ namespace Day11
                         Solution = visited;
                     }
                 }
+
+                if (_cancellationToken.IsCancellationRequested) break;
             }
 
             return Solution != null;
