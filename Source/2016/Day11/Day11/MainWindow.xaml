@@ -31,6 +31,11 @@
                     Margin="15"
                     FontWeight="Bold"/>
 
+            <ComboBox Name="CombinatorCombo"
+                      ItemsSource="{Binding Combinators}"
+                      DisplayMemberPath="Name"
+                      Height="30"/>
+
             <Button Click="FindSolution_Click"
                     Height="30"
                     Content="Find Solution"/>

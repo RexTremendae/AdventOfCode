@@ -25,6 +25,7 @@ namespace Day11
         private bool _gameOver;
         private int _stepsProgress;
         private long _queueSize;
+        private CancellationTokenSource _cancellationSource;
 
         private static string[][] _small = new[]
         {
@@ -32,6 +33,14 @@ namespace Day11
             new[] { "",  "",   "",   "LG", "" },
             new[] { "",  "HG", "",   "",   "" },
             new[] { "E", "",   "HM", "",   "LM" }
+        };
+
+        private static string[][] _medium = new[]
+        {
+            new[] { "",  "",   "",   "",   "",   "",    ""   },
+            new[] { "",  "",   "",   "LG", "",   "",    ""   },
+            new[] { "",  "HG", "",   "",   "",   "",    ""   },
+            new[] { "E", "",   "HM", "",   "LM", "AG",  "AM" }
         };
 
         private static string[][] _large = new[]
@@ -42,10 +51,9 @@ namespace Day11
             new[] { "E",  "PLG",  "",     "THG",  "THM",  "PRG",  "",     "RG",  "RM",  "CG",  "CM" }
         };
 
-        private string[][] _initialState = _large;
+        private string[][] _initialState = _medium;
 
-        //private ICombinator _combinator = new BruteForceCombinator();
-        private ICombinator _combinator = new OptimizedCombinator();
+        public List<ICombinator> Combinators { get; }
 
         public MainWindow()
         {
@@ -54,6 +62,8 @@ namespace Day11
 
             Items = new ObservableCollection<Item>();
             _itemDictionary = new Dictionary<string, Item>();
+
+            _cancellationSource = new CancellationTokenSource();
 
             Cols = _initialState[0].Length;
             Rows = _initialState.Length;
@@ -79,6 +89,12 @@ namespace Day11
                 }
 
             Reset_Click(null, null);
+
+            Combinators = new List<ICombinator>(new ICombinator[]
+            {
+                new BruteForceCombinator(),
+                new OptimizedCombinator()
+            });
         }
 
         public long QueueSize
@@ -178,6 +194,9 @@ namespace Day11
 
         private void Reset_Click(object sender, RoutedEventArgs e)
         {
+            _cancellationSource.Cancel();
+            Thread.Sleep(1000);
+
             _elevatorYPos = Rows - 1;
 
             MoveCounter = 0;
@@ -195,13 +214,19 @@ namespace Day11
 
         private void FindSolution_Click(object sender, RoutedEventArgs e)
         {
-            Solver solver = new Solver(_initialState, _combinator);
+            _cancellationSource.Dispose();
+            _cancellationSource = new CancellationTokenSource();
+            var token = _cancellationSource.Token;
+            Solver solver = new Solver(_initialState, (ICombinator)CombinatorCombo.SelectedItem, token);
+
             Task.Run(() =>
             {
                 solver.ReportProgress += Solver_ReportProgress;
                 solver.Solve();
 
                 Application.Current.Dispatcher.Invoke(() => Reset_Click(null, null));
+
+                if (solver.Solution == null) return;
 
                 foreach (var mvmnt in solver.Solution)
                 {
@@ -219,7 +244,7 @@ namespace Day11
 
                     Thread.Sleep(1000);
                 }
-            });
+            }, token);
         }
 
         private void Solver_ReportProgress(object sender, Progress p)
