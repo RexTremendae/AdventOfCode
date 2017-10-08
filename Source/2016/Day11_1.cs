@@ -1,376 +1,488 @@
-using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-
+using System;
+using Shouldly;
+using Xunit;
 using static System.Console;
 
 namespace Day11
 {
+    public class Program
+    {
+        public static void Main()
+        {
+            new Program().Run();
+        }
+
+        public void Run()
+        {
+            var small = new State(0, new[] { 1, 0,  2, 0 });
+            // F4  |  .  .    .  .
+            // F3  |  .  .    LG .
+            // F2  |  HG .    .  .
+            // F1  E  .  HM   .  LM
+
+            var mid = new State(0, new[] { 0, 1,  0, 0,  0, 1,  0, 0 });
+            // F4  |   .   .     .   .     .   .     .   .
+            // F3  |   .   .     .   .     .   .     .   .
+            // F2  |   .  PoM    .   .     .  PrM    .   .
+            // F1  E  PoG  .     TG  TM   PrG  .     RG  RM
+
+            var large = new State(0, new[] { 0, 1,  0, 0,  0, 1,  0, 0,  0, 0 });
+            // F4  |   .   .     .   .     .   .     .   .     .   .
+            // F3  |   .   .     .   .     .   .     .   .     .   .
+            // F2  |   .  PoM    .   .     .  PrM    .   .     .   .
+            // F1  E  PoG  .     TG  TM   PrG  .     RG  RM    CG  CM
+
+            Measure(nameof(small), () => Solve(small));
+            Measure(nameof(mid), () => Solve(mid));
+            Measure(nameof(large), () => Solve(large));
+
+            ReadKey();
+        }
+
+        public int Solve(State initial)
+        {
+            var open = new StatePrioQ();
+            open.EnQ(initial.Heuristic, initial);
+
+            var closed = new Dictionary<State, int>();
+
+            for (;;)
+            {
+                if (open.IsEmpty()) return -1;
+                var state = open.DeQ();
+                closed.Add(state, state.TotalMovement);
+
+                /*Write("DeQ: ");
+                foreach (var st in state.Data)
+                {
+                    Write($"{st} ");
+                }
+                WriteLine();
+                */
+                if (state.IsGoal)
+                {
+                    int cost = state.TotalMovement;
+                    var visitedStates = new List<string>();
+                    while(state != null)
+                    {
+                        visitedStates.Insert(0, state.ToString());
+                        state = state.Prev;
+                    }
+
+                    return cost;
+                }
+
+                foreach (var next in GetNextStates(state))
+                {
+                    if (next.IsFried) continue;
+
+                    // var inOpen = open.GetCost(next).HasValue;
+                    // var inClosed = closed.ContainsKey(next);
+
+                    var existingOpenCost = open.GetCost(next);
+                    if (existingOpenCost.HasValue && existingOpenCost.Value > next.TotalMovement)
+                        open.Remove(next);
+
+                    if (closed.TryGetValue(next, out var existingClosedCost) && existingClosedCost > next.TotalMovement)
+                    {
+                        closed.Remove(next);
+                    }
+
+                    if (!open.GetCost(next).HasValue && !closed.ContainsKey(next))
+                    {
+                        open.EnQ(next.TotalMovement + next.Heuristic, next);
+                        /*Write("EnQ: ");
+                        foreach (var st in next.Data)
+                        {
+                            Write($"{st} ");
+                        }
+                        WriteLine();
+                        */
+                    }
+                }
+            }
+        }
+
+        public static IEnumerable<State> GetNextStates(State state)
+        {
+            for (int x1 = 0; x1 < state.Data.Length; x1++)
+            {
+                (var up, var down) = GetNextStates(state, x1);
+                if (up == null && down == null) continue;
+                if (up != null) yield return up;
+                if (down != null) yield return down;
+
+                for (int x2 = 0; x2 < state.Data.Length; x2++)
+                {
+                    if (x1 == x2) continue;
+
+                    (up, down) = GetNextStates(state, x1, x2);
+                    if (up != null) yield return up;
+                    if (down != null) yield return down;
+                }
+            }
+        }
+
+        public static (State up, State down) GetNextStates(State state, int x1)
+        {
+            State up = null;
+            State down = null;
+
+            if (state.Data[x1] != state.Elevator) return (up, down);
+
+            if (state.Elevator > 0)
+            {
+                down = Clone(state, -1, new[]{x1});
+            }
+            if (state.Elevator < 3)
+            {
+                up = Clone(state, +1, new[]{x1});
+            }
+
+            return (up, down);
+        }
+
+        public static (State up, State down) GetNextStates(State state, int x1, int x2)
+        {
+            State up = null;
+            State down = null;
+
+            if (state.Data[x1] != state.Elevator || state.Data[x2] != state.Elevator) return (up, down);
+
+            if (state.Elevator > 0)
+            {
+                down = Clone(state, -1, new[]{x1, x2});
+            }
+            if (state.Elevator < 3)
+            {
+                up = Clone(state, +1, new[]{x1, x2});
+            }
+
+            return (up, down);
+        }
+
+        private static State Clone(State state, int delta, int[] indices)
+        {
+            if (indices.Length == 2 && indices[0] == indices[1])
+                throw new InvalidOperationException();
+
+            var cloneData = new int[state.Data.Length];
+            for (int d = 0; d < state.Data.Length; d++) cloneData[d] = state.Data[d];
+
+            foreach (var idx in indices)
+                cloneData[idx] += delta;
+
+            var cloneState = new State(state.Elevator + delta, cloneData)
+            {
+                TotalMovement = state.TotalMovement + 1,
+                Prev = state
+            };
+
+            return cloneState;
+        }
+
+        private void Measure(string name, Func<int> action)
+        {
+            var start = DateTime.Now;
+            int x = action();
+            var end = DateTime.Now;
+            var duration = (end - start).TotalSeconds.ToString("0.00");
+            name = (name + ":").PadRight(8);
+            WriteLine($"{name} solution = {x}, duration = {duration}s");
+        }
+    }
+
     public class State
     {
-        public byte[] Generators;
-        public byte[] Microchips;
-        public byte ElevatorPosition;
+        public int[] Data { get; }
+        public int Elevator { get; }
+        public State Prev { get; set; }
+        public int TotalMovement { get; set; }
 
-        public override bool Equals(object obj)
+        public bool IsFried { get; private set; }
+        public bool IsGoal { get; private set; }
+        public int Heuristic { get; private set; }
+
+        public State(int elevator, params int[] data)
         {
-            var other = obj as State;
+            if (data.Any(x => x > 3))
+                throw new InvalidOperationException();
 
-            if (ElevatorPosition != other.ElevatorPosition) return false;
+            Data = data;
+            Elevator = elevator;
 
-            for (int i = 0; i < Generators.Length; i++)
+            CalculateHeuristic();
+            CalculateIsGoal();
+            CalculateIsFried();
+        }
+
+        private void CalculateHeuristic()
+        {
+            Heuristic = Data.Sum(x => (3 - x));
+        }
+
+        private void CalculateIsGoal()
+        {
+            IsGoal = (Heuristic == 0);
+        }
+
+        private void CalculateIsFried()
+        {
+            IsFried = false;
+
+            for (int mx = 1; mx < Data.Length; mx+=2)
             {
-                if (Generators[i] != other.Generators[i]) return false;
-                if (Microchips[i] != other.Microchips[i]) return false;
+                for (int gx = 0; gx < Data.Length; gx+=2)
+                {
+                    if (Data[gx] == Data[mx] &&    // Any g's at the same floor as the current m
+                        Data[mx] != Data[mx-1])    // The m's g is not protecting
+                    {
+                        IsFried = true;
+                        return;
+                    }
+                }
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            return (Elevator, Data.Sum()).GetHashCode();
+        }
+
+        public override bool Equals(object other)
+        {
+            if (!(other is State state)) return false;
+
+            if (state.Elevator != Elevator) return false;
+
+            for (int i = 0; i < Data.Length; i++)
+            {
+                if (Data[i] != state.Data[i]) return false;
             }
 
             return true;
         }
 
-        public override int GetHashCode()
-        {
-            return Tuple.Create(Generators, Microchips, ElevatorPosition).GetHashCode();
-        }
-
-        public State Clone()
-        {
-            var newState = new State();
-
-            newState.Generators = new byte[Generators.Length];
-            for (int i = 0; i < Generators.Length; i++)
-                newState.Generators[i] = Generators[i];
-
-            newState.Microchips = new byte[Microchips.Length];
-            for (int i = 0; i < Microchips.Length; i++)
-                newState.Microchips[i] = Microchips[i];
-
-            newState.ElevatorPosition = ElevatorPosition;
-
-            return newState;
-        }
-
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var state = "";
 
-            sb.Append($"E: {ElevatorPosition}, G: [");
-            foreach (var g in Generators)
+            state += "E:" + Elevator + " | ";
+            for (int d = 0; d < Data.Length; d++)
             {
-                sb.Append($"{g}, ");
+                state += $"{Data[d]} ";
+                if (d%2 != 0) state += " ";
             }
-            sb.Remove(sb.Length - 2, 2);
-            sb.Append("], M: [");
-            foreach (var m in Microchips)
-            {
-                sb.Append($"{m}, ");
-            }
-            sb.Remove(sb.Length - 2, 2);
-            sb.Append("] ");
 
-            return sb.ToString();
+            return state.Trim();
         }
     }
 
-    public class Program
+    public class PrioQ<T>
     {
-        public static void Main(string[] args)
+        private readonly List<(int prio, T value)> _queue;
+
+        public PrioQ()
         {
-            new Program().Run(args);
+            _queue = new List<(int, T)>();
         }
 
-        public void Run(string[] args)
+        public void EnQ(int prio, T value)
         {
-            IReader reader;
-            if (args.Length > 0)
+            int idx = _queue.Count - 1;
+
+            for (; idx >= 0; idx--)
             {
-                reader = new FileReader(args[0]);
-            }
-            else
-            {
-                reader = new ConsoleReader();
-            }
-
-
-            // ===  Small example  ===
-            var _smallExample = new State();
-
-            _smallExample.Generators = new byte[2];
-            _smallExample.Microchips = new byte[2];
-
-            _smallExample.Generators[0] = 1;
-            _smallExample.Generators[1] = 2;
-            // =======================
-
-
-            // ===  Bigger Example  ===
-            var _biggerExample = new State();
-
-            _biggerExample.Generators = new byte[3];
-            _biggerExample.Microchips = new byte[3];
-
-            _biggerExample.Microchips[0] = 1;
-            _biggerExample.Microchips[1] = 1;
-            // =======================
-
-
-            // ===  Problem input  ===
-            var _problemInput = new State();
-
-            _problemInput.Generators = new byte[5];
-            _problemInput.Microchips = new byte[5];
-
-            _problemInput.Microchips[0] = 1;
-            _problemInput.Microchips[1] = 1;
-            // =======================
-
-
-            var solver = new Solver();
-            solver.Solve(_biggerExample);
-
-            WriteLine(solver.Solution.Count);
-            WriteLine();
-            WriteSolution(solver.Solution);
-        }
-
-        public void WriteSolution(List<State> solution)
-        {
-            int stateCounter = 0;
-
-            foreach (var state in solution)
-            {
-                WriteLine($"[{stateCounter}]");
-                for (int i = 0; i < Solver.Floors; i++)
+                if (_queue[idx].prio <= prio)
                 {
-                    string row = string.Empty;
-                    int currentIndex = Solver.Floors - i - 1;
-
-                    row += "F";
-                    row += (currentIndex + 1);
-                    row += " ";
-
-                    if (state.ElevatorPosition == currentIndex)
-                        row += "E";
-                    else
-                        row += " ";
-
-                    row += " ";
-
-                    for (int j = 0; j < state.Generators.Length; j++)
-                    {
-                        if (state.Generators[j] == currentIndex)
-                            row += $"G{j}";
-                        else
-                            row += ". ";
-                        
-                        row += " ";
-
-                        if (state.Microchips[j] == currentIndex)
-                            row += $"M{j}";
-                        else
-                            row += ". ";
-
-                        row += " ";
-                    }
-                    WriteLine(row);
+                    idx ++;
+                    break;
                 }
-                WriteLine();
-                stateCounter++;
+            }
+
+            if (idx < 0) idx = 0;
+
+            _queue.Insert(idx, (prio, value));
+        }
+
+        public T DeQ()
+        {
+            var retVal = _queue.First();
+            _queue.RemoveAt(0);
+            return retVal.value;
+        }
+
+        public bool IsEmpty()
+        {
+            return !_queue.Any();
+        }
+
+        public void Remove(T value)
+        {
+            for (int idx = 0; idx < _queue.Count; idx++)
+            {
+                if (_queue[idx].value.Equals(value))
+                {
+                    _queue.RemoveAt(idx);
+                    return;
+                }
             }
         }
     }
 
-    public class Solver
+    public class StatePrioQ : PrioQ<State>
     {
-        public const byte Floors = 4;
-        public List<State> Solution;
+        private readonly Dictionary<State, int> _enqueuedStates;
 
-        private enum StateOfState
+        public StatePrioQ()
         {
-            Neutral,
-            Finished,
-            Burned,
-            Visited
+            _enqueuedStates = new Dictionary<State, int>();
         }
 
-        Queue<Tuple<State, List<State>>> _moves;
-
-        public void Solve(State state)
+        public new void EnQ(int prio, State value)
         {
-            _moves = new Queue<Tuple<State, List<State>>>();
-            EnqueuePossibleMoves(state, new List<State>());
+            base.EnQ(prio, value);
+            _enqueuedStates.Add(value, value.TotalMovement);
+        }
 
-            int lastLength = 0;
+        public new State DeQ()
+        {
+            var state = base.DeQ();
+            if (_enqueuedStates.ContainsKey(state))
+                _enqueuedStates.Remove(state);
 
-            while (Solution == null)
+            return state;
+        }
+
+        public int? GetCost(State state)
+        {
+            if (!_enqueuedStates.TryGetValue(state, out var cost))
+                return null;
+
+            return cost;
+        }
+
+        public new void Remove(State next)
+        {
+            if (_enqueuedStates.ContainsKey(next))
             {
-                var dequeued = _moves.Dequeue();
-                if (dequeued.Item2.Count != lastLength)
-                {
-                    string lastLengthAsString = lastLength.ToString();
-                    if (lastLengthAsString.Length == 1)
-                        lastLengthAsString = " " + lastLengthAsString;
-                    WriteLine($"Dequeueing ({lastLengthAsString} :: {_moves.Count})...");
-                    lastLength = dequeued.Item2.Count;
-                }
-                EnqueuePossibleMoves(dequeued.Item1, dequeued.Item2);
+                _enqueuedStates.Remove(next);
+                base.Remove(next);
             }
-        }
-
-        private void EnqueuePossibleMoves(State currentState, List<State> visited)
-        {
-            for (byte x1 = 0; x1 < currentState.Generators.Length * 2; x1++)
-            {
-                EnqueueElevatorMoves(currentState, visited, new[] { x1 });
-                if (Solution != null) return;
-
-                for (byte x2 = (byte)(x1 + 1); x2 < currentState.Generators.Length * 2; x2++)
-                {
-                    EnqueueElevatorMoves(currentState, visited, new[] { x1, x2 });
-                }
-            }
-        }
-
-        private void EnqueueElevatorMoves(State currentState, List<State> visited, byte[] selection)
-        {
-            var newStates = CreateStates(currentState, selection);
-            foreach (var state in newStates)
-            {
-                if (state == null) continue;
-
-                var stateOfState = CheckState(state, visited);
-                if (stateOfState == StateOfState.Finished)
-                {
-                    Solution = visited.Clone();
-                    Solution.Add(currentState);
-                    Solution.Add(state);
-                }
-                else if (stateOfState == StateOfState.Neutral)
-                {
-                    var visitedClone = visited.Clone();
-                    visitedClone.Add(currentState);
-                    _moves.Enqueue(Tuple.Create(state, visitedClone));
-                }
-            }
-        }
-
-        private State CreateState(State state, byte[] selection, int elevatorDelta)
-        {
-            if (state.ElevatorPosition + elevatorDelta < 0) return null;
-            if (state.ElevatorPosition + elevatorDelta >= Floors) return null;
-
-            var newState = state.Clone();
-
-            foreach (var b in selection)
-            {
-                int chipIndex = b - newState.Generators.Length;
-                if (chipIndex >= 0)
-                {
-                    if (newState.Microchips[chipIndex] != newState.ElevatorPosition)
-                    {
-                        return null;
-                    }
-
-                    newState.Microchips[chipIndex] = (byte)(newState.Microchips[chipIndex] + elevatorDelta);
-                }
-                else
-                {
-                    if (newState.Generators[b] != newState.ElevatorPosition)
-                    {
-                        return null;
-                    }
-
-                    newState.Generators[b] = (byte)(newState.Generators[b] + elevatorDelta);
-                }
-            }
-
-            newState.ElevatorPosition = (byte)(newState.ElevatorPosition + elevatorDelta);
-
-            return newState;
-        }
-
-        private State[] CreateStates(State state, byte[] selection)
-        {
-            State s1 = CreateState(state, selection, 1);
-            State s2 = CreateState(state, selection, -1);
-
-            return new State[] { s1, s2 };
-        }
-
-        private StateOfState CheckState(State newState, List<State> visited)
-        {
-            if (visited.Contains(newState)) return StateOfState.Visited;
-
-            bool isFinished = true;
-            foreach (var g in newState.Generators)
-                if (g != Floors-1) isFinished = false;
-            foreach (var m in newState.Microchips)
-                if (m != Floors-1) isFinished = false;
-
-            if (isFinished) return StateOfState.Finished;
-
-            for (int i = 0; i < newState.Microchips.Length; i++)
-            {
-                if (newState.Microchips[i] == newState.Generators[i]) continue;
-
-                for (int j = 0; j < newState.Generators.Length; j++)
-                {
-                    if (newState.Generators[j] == newState.Microchips[i]) return StateOfState.Burned;
-                }
-            }
-
-            return StateOfState.Neutral;
         }
     }
 
-    public static class ListExtension
+    public class Day11_1_Tests
     {
-        public static List<T> Clone<T>(this List<T> original)
+        [Fact]
+        private void PrioQTest()
         {
-            List<T> clone = new List<T>();
-            clone.AddRange(original);
+            var q = new PrioQ<char>();
 
-            return clone;
-        }
-    }
+            q.EnQ(5, 'a');
+            q.EnQ(3, 'b');
+            q.EnQ(3, 'c');
+            q.EnQ(5, 'd');
 
-    interface IReader
-    {
-        string ReadLine();
-        bool EndOfStream { get; }
-    }
-
-    public class ConsoleReader : IReader
-    {
-        public string ReadLine()
-        {
-            return Console.ReadLine();
+            q.DeQ().ShouldBe('b');
+            q.DeQ().ShouldBe('c');
+            q.DeQ().ShouldBe('a');
+            q.DeQ().ShouldBe('d');
         }
 
-        public bool EndOfStream => false;
-    }
-
-    public class FileReader : IReader
-    {
-        StreamReader _reader;
-
-        public FileReader(string filename)
+        [Fact]
+        public void NextStateTest1()
         {
-            _reader = new StreamReader(filename);
+            var state = new State(1, new[] { 1, 1 });
+
+            (var up, var down) = Program.GetNextStates(state, 1);
+
+            up.ToString().ShouldBe("E:2 | 1 2");
+            down.ToString().ShouldBe("E:0 | 1 0");
         }
 
-        public string ReadLine()
+        [Fact]
+        public void NextStateTest2()
         {
-            return _reader.ReadLine();
+            var state = new State(1, new[] { 1, 1, 1, 1 });
+
+            (var up, var down) = Program.GetNextStates(state, 1, 2);
+
+            up.ToString().ShouldBe("E:2 | 1 2  2 1");
+            down.ToString().ShouldBe("E:0 | 1 0  0 1");
         }
 
-        public bool EndOfStream
+        [Fact]
+        public void StateEqualsCheck()
         {
-            get
-            {
-                return _reader.EndOfStream;
-            }
+            var state = new State(1, new[] { 0, 1, 2, 2 });
+            state.Equals(new State(1, new[] { 0, 1, 2, 2 })).ShouldBeTrue();
+        }
+
+        [Fact]
+        public void StateHashcodeCheck()
+        {
+            var state = new State(1, new[] { 0, 1, 2, 2 });
+            state.GetHashCode().ShouldBe(new State(1, new[] { 0, 1, 2, 2 }).GetHashCode());
+        }
+
+        [Fact]
+        public void DictionaryCheck()
+        {
+            var state = new State(1, new[] { 0, 1, 2, 2 });
+            var q = new StatePrioQ();
+            q.EnQ(1, state);
+            q.GetCost(new State(1, new[] { 0, 1, 2, 2 })).ShouldNotBeNull();
+        }
+
+        [Fact]
+        public void SimpleSolve1()
+        {
+            var state = new State(2, new[] { 2, 2, 3, 3 });
+            var p = new Program();
+            p.Solve(state).ShouldBe(1);
+        }
+
+        [Fact]
+        public void SimpleSolve2()
+        {
+            var state = new State(2, new[] { 2, 2, 3, 2 });
+            var p = new Program();
+            p.Solve(state).ShouldBe(3);
+        }
+
+        [Fact]
+        public void SimpleSolve3()
+        {
+            var state = new State(2, new[] { 2, 2, 2, 2 });
+            var p = new Program();
+            p.Solve(state).ShouldBe(5);
+        }
+
+        [Fact]
+        public void SimpleSolve4()
+        {
+            var state = new State(2, new[] { 2, 2, 2, 0 });
+            var p = new Program();
+            p.Solve(state).ShouldBe(9);
+        }
+
+        [Fact]
+        public void SimpleSolve5()
+        {
+            var state = new State(0, new[] { 1, 0, 2, 0 });
+            var p = new Program();
+            p.Solve(state).ShouldBe(11);
+        }
+
+        [Fact]
+        public void BigSolve()
+        {
+            var state = new State(0, new[] { 0, 1, 0, 0, 0, 1, 0, 0, 0, 0 });
+            var p = new Program();
+            //p.Solve(state).ShouldBe(11);
         }
     }
 }
