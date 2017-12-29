@@ -2,6 +2,7 @@ bin/
 obj/
 .vs/
 packages/
+core/
 
 *.exe
 *.pdb
