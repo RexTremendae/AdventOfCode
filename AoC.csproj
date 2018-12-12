@@ -9,14 +9,22 @@
   <ItemGroup>
     <Compile Remove="Input\**" />
     <Compile Remove="Source\**" />
+    <Compile Remove="_NCrunch_AoC\**" />
     <EmbeddedResource Remove="Input\**" />
     <EmbeddedResource Remove="Source\**" />
+    <EmbeddedResource Remove="_NCrunch_AoC\**" />
     <None Remove="Input\**" />
     <None Remove="Source\**" />
+    <None Remove="_NCrunch_AoC\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="Source\2018\Day12_1.cs" />
+    <None Remove="AoC.v3.ncrunchproject" />
+    <None Remove="AoC.v3.ncrunchsolution" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Source\2018\Day12_2.cs" />
   </ItemGroup>
 
   <ItemGroup>
