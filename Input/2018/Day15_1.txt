@@ -1,0 +1,11 @@
+#######
+#G..#E#
+#E#E.E#
+#G.##.#
+#...#E#
+#...E.#
+#######
+
+Combat ends after 37 full rounds
+Elves win with 982 total hit points left
+Outcome: 37 * 982 = 36334
