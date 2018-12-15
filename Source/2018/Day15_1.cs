@@ -168,60 +168,84 @@ namespace Day15
 
         public (int x, int y)? Find(Unit unit)
         {
-            var queue = new Queue<QueueEntity>();
-            var entity = new QueueEntity();
-            entity.Visited.Add(unit.Position);
-            entity.CurrentPosition = unit.Position;
-            queue.Enqueue(entity);
-            var minDistancePaths = new List<(int distance, (int x, int y) nextStep)>();
-            int minDistance = 0;
-            bool goon = true;
-//            WriteLine($"Finding movement for {(unit.Type == 'G' ? "Goblin" : "Elf")} at position ({unit.Position.x}, {unit.Position.y})");
-            while(queue.Any() && goon)
+            var allUnits = new Dictionary<(int, int), Unit>();
+            foreach (var u in _allUnits)
             {
-                entity = queue.Dequeue();
-                foreach (var candidate in GetCandidates(entity.CurrentPosition))
+                allUnits.Add(u.Position, u);
+            }
+
+            var layers = new List<HashSet<(int x, int y)>>();
+            layers.Add(new HashSet<(int x, int y)>());
+            var nextLayer = new HashSet<(int x, int y)>();
+            layers.Add(nextLayer);
+
+            var visited = new HashSet<(int x, int y)>();
+            foreach (var c in GetCandidates(unit.Position))
+            {
+                visited.Add(c);
+                if (!allUnits.ContainsKey(c))
+                    nextLayer.Add(c);
+            }
+
+            var enemyCandidates = new List<Unit>();
+            int distance = 2;
+            while (nextLayer.Any())
+            {
+                var nextNextLayer = new HashSet<(int x, int y)>();
+                foreach (var n in nextLayer)
                 {
-                    var otherUnit = _allUnits.SingleOrDefault(e => e.Position.x == candidate.x && e.Position.y == candidate.y);
-                    if (otherUnit != null)
+                    foreach (var c in GetCandidates(n))
                     {
-                        if (otherUnit.Type == unit.Type) continue;
-                        if (minDistance == 0 || entity.PathLength == minDistance)
+                        if (visited.Contains(c)) continue;
+
+                        if (allUnits.TryGetValue(c, out var unitFound))
                         {
-                            minDistance = entity.PathLength;
-                            minDistancePaths.Add((entity.PathLength, entity.FirstStep.Value));
+                            if (unitFound.Type != unit.Type)
+                            {
+                                enemyCandidates.Add(unitFound);
+                            }
+                            continue;
                         }
-                        else if (entity.PathLength != minDistance)
-                        {
-                            goon = false;
-                            break;
-                        }
+                        nextNextLayer.Add(c);
+                        visited.Add(c);
                     }
-                    else if (!entity.Visited.Contains(candidate))
+                }
+
+                layers.Add(nextNextLayer);
+                if (enemyCandidates.Any()) break;
+
+                nextLayer = nextNextLayer;
+                distance++;
+            }
+
+            if (enemyCandidates.None()) return null;
+
+            var queue = new Queue<(int distance, (int x, int y) position)>();
+            var stepCandidates = new List<(int x, int y)>();
+            foreach (var ec in enemyCandidates)
+            {
+                queue.Enqueue((distance, ec.Position));
+            }
+
+            while (queue.Any())
+            {
+                var q = queue.Dequeue();
+                foreach (var c in GetCandidates(q.position))
+                {
+                    if (q.distance == 1)
                     {
-                        var clone = entity.Clone();
-                        clone.CurrentPosition = candidate;
-                        clone.Visited.Add(candidate);
-                        clone.PathLength++;
-                        if (clone.FirstStep == null) 
-                        {
-                            clone.FirstStep = candidate;
-                        }
-                        queue.Enqueue(clone);
+                        stepCandidates.Add(q.position);
+                    }
+                    else if (q.distance > 1 && layers[q.distance - 1].Contains(c))
+                    {
+                        queue.Enqueue((q.distance - 1, c));
                     }
                 }
             }
-/*
-            foreach (var v in minDistancePaths)
-            {
-                WriteLine($"{v.distance} ({v.nextStep.x}, {v.nextStep.y})");
-            }
-*/
-            if (minDistancePaths.None()) return null;
-            return minDistancePaths.Where(d => d.distance == minDistance)
-                                   .OrderBy(d => d.nextStep.y)
-                                   .ThenBy(d => d.nextStep.x)
-                                   .FirstOrDefault().nextStep;
+
+            return stepCandidates.OrderBy(d => d.y)
+                                 .ThenBy(d => d.x)
+                                 .FirstOrDefault();
         }
 
         private IEnumerable<(int x, int y)> GetCandidates((int x, int y) current)
@@ -319,6 +343,11 @@ namespace Day15
         public static bool IsEnemy(this Unit unit, Unit other)
         {
             return unit.Type != other.Type;
+        }
+
+        public static int Distance(this (int x, int y) from, (int x, int y) to)
+        {
+            return Math.Abs(from.x - to.x) + Math.Abs(from.y - to.y);
         }
 
         public static int Distance(this Unit unit, Unit other)
