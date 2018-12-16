@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="Source\2018\Day15_1.cs" />
+    <Compile Include="Source\2018\Day15_2.cs" />
   </ItemGroup>
 
   <ItemGroup>
