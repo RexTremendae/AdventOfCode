@@ -25,7 +25,7 @@ namespace Day17
             Print(data);
 
             var dropCount = 0;
-            foreach (var line in data.data)
+            foreach (var line in data.data.Skip(data.offset.y))
             {
                 foreach (var ch in line)
                 {
@@ -35,10 +35,10 @@ namespace Day17
             WriteLine($"Water volume: {dropCount}");
         }
 
-        private void Trickle((List<char[]> data, int offsetX) data, int drops)
+        private void Trickle((List<char[]> data, (int x, int y) offset) data, int drops)
         {
             var queue = new DropQueue();
-            queue.Enqueue((x: 500-data.offsetX, y: 0));
+            queue.Enqueue((x: 500-data.offset.x, y: 0));
             bool countDrops = drops > 0;
 
             while((!countDrops || drops-- > 0) && !queue.IsEmpty)
@@ -70,13 +70,20 @@ namespace Day17
                 {
                     var prev = (current.x, current.y);
                     var entries = new List<(int x, int y)>();
-                    while (prev.x > 0 && data[prev.y][prev.x] == '|')
+                    while (prev.x >= 0 && prev.x < data[prev.y].Length && data[prev.y][prev.x] == '|')
                     {
                         if (data[prev.y-1][prev.x] == '|') entries.Add((prev.x, prev.y-1));
                         prev = (prev.x-xdiff, prev.y);
                     }
                     if (data[prev.y][prev.x] == '#')
                     {
+                        // Special case, trickle down a 1 unit wide pipe
+                        if (Math.Abs(prev.x - next.x) == 2)
+                        {
+                            data[prev.y][prev.x+xdiff] = '~';
+                            queue.Enqueue((prev.x+xdiff, prev.y-1));
+                            return;
+                        }
                         foreach (var entry in entries)
                         {
                             if (entry.x-1 >= 0 && data[entry.y][entry.x-1] != '#')
@@ -125,10 +132,10 @@ namespace Day17
             public bool IsEmpty => !_queue.Any();
         }
 
-        private (List<char[]> data, int offsetX) ParseInput(string filepath)
+        private (List<char[]> data, (int x, int y) offset) ParseInput(string filepath)
         {
             int lineNumber = 1;
-            int minX = int.MaxValue;
+            int minX = int.MaxValue, minY = int.MaxValue;
             int maxX = 0, maxY = 0;
 
             var intervals = new List<(int? x1, int? x2, int? y1, int? y2)>();
@@ -185,14 +192,17 @@ namespace Day17
                     if (x.Item2.Value > maxX) maxX = x.Item2.Value;
                 }
 
+                if (y.Item1.Value < minY) minY = y.Item1.Value;
                 if (y.Item1.Value > maxY) maxY = y.Item1.Value;
                 if (y.Item2.HasValue)
                 {
+                    if (y.Item2.Value < minY) minY = y.Item2.Value;
                     if (y.Item2.Value > maxY) maxY = y.Item2.Value;
                 }
             }
 
             int offsetX = minX - 1;
+            int offsetY = minY;
             int width = maxX - minX + 3;
 
             var result = new List<char[]>();
@@ -220,23 +230,23 @@ namespace Day17
                 }
             }
 
-            return (result, offsetX);
+            return (result, (offsetX, offsetY));
         }
 
-        private void Print((List<char[]> data, int offsetX) data)
+        private void Print((List<char[]> data, (int x, int y) offset) data)
         {
             bool firstLine = true;
             foreach (var line in data.data)
             {
                 for (int x = 0; x < line.Length; x++)
                 {
-                    if (firstLine && x + data.offsetX == 500) Write('+');
+                    if (firstLine && x + data.offset.x == 500) Write('+');
                     else Write(line[x]);
                 }
                 WriteLine();
                 firstLine = false;
             }
-            WriteLine($"X offset = {data.offsetX}");
+            WriteLine($"X offset = {data.offset.x}");
             WriteLine();
         }
     }
