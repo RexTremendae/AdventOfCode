@@ -55,72 +55,56 @@ namespace Day17
                     continue;
                 }
 
-                next = (current.x + 1, current.y);
-                if (next.x < data.data[next.y].Length)
+                TrickleSideways(current,  1, data.data, queue);
+                TrickleSideways(current, -1, data.data, queue);
+            }
+        }
+
+        private void TrickleSideways((int x, int y) current, int xdiff, List<char[]> data, DropQueue queue)
+        {
+            var next = (x: current.x + xdiff, y: current.y);
+            if (next.x < data[next.y].Length)
+            {
+                var nextChar = data[next.y][next.x];
+                if (nextChar == '#')
                 {
-                    var nextChar = data.data[next.y][next.x];
-                    if (nextChar == '#')
+                    var prev = (current.x, current.y);
+                    var entries = new List<(int x, int y)>();
+                    while (prev.x > 0 && data[prev.y][prev.x] == '|')
                     {
-                        var prev = (current.x, current.y);
-                        var entry = (x: 0, y: 0);
-                        while (prev.x > 0 && data.data[prev.y][prev.x] == '|')
-                        {
-                            if (data.data[prev.y-1][prev.x] == '|') entry = (prev.x, prev.y-1);
-                            prev = (prev.x-1, prev.y);
-                        }
-                        if (data.data[prev.y][prev.x] == '#')
-                        {
-                            if (entry.x-1 >= 0 && data.data[entry.y][entry.x-1] != '#')
-                                queue.Enqueue((entry.x-1, entry.y-1));
-                            if (entry.x+1 < data.data[entry.y].Length && data.data[entry.y][entry.x+1] != '#')
-                                queue.Enqueue((entry.x+1, entry.y-1));
-                            prev = (prev.x+1, prev.y);
-                            while (data.data[prev.y][prev.x] == '|')
-                            {
-                                data.data[prev.y][prev.x] = '~';
-                                prev = (prev.x+1, prev.y);
-                            }
-                        }
+                        if (data[prev.y-1][prev.x] == '|') entries.Add((prev.x, prev.y-1));
+                        prev = (prev.x-xdiff, prev.y);
                     }
-                    else if (nextChar.NotIn('|', '~'))
+                    if (data[prev.y][prev.x] == '#')
                     {
-                        data.data[next.y][next.x] = '|';
-                        queue.Enqueue(next);
+                        foreach (var entry in entries)
+                        {
+                            if (entry.x-1 >= 0 && data[entry.y][entry.x-1] != '#')
+                                queue.Enqueue((entry.x-1, entry.y-1));
+                            if (entry.x+1 < data[entry.y].Length && data[entry.y][entry.x+1] != '#')
+                                queue.Enqueue((entry.x+1, entry.y-1));
+                        }
+                        prev = (prev.x+xdiff, prev.y);
+                        while (data[prev.y][prev.x] == '|')
+                        {
+                            data[prev.y][prev.x] = '~';
+                            prev = (prev.x+xdiff, prev.y);
+                        }
                     }
                 }
-
-                next = (current.x - 1, current.y);
-                if (next.x >= 0)
+                else if (nextChar == '.')
                 {
-                    var nextChar = data.data[next.y][next.x];
-                    if (nextChar == '#')
+                    data[next.y][next.x] = '|';
+                    var newx = next.x+xdiff;
+                    if (xdiff > 0)
                     {
-                        var prev = (current.x, current.y);
-                        var entry = (x: 0, y: 0);
-                        while (prev.x > 0 && data.data[prev.y][prev.x] == '|')
-                        {
-                            if (data.data[prev.y-1][prev.x] == '|') entry = (prev.x, prev.y-1);
-                            prev = (prev.x+1, prev.y);
-                        }
-                        if (data.data[prev.y][prev.x] == '#')
-                        {
-                            if (entry.x-1 >= 0 && data.data[entry.y][entry.x-1] != '#')
-                                queue.Enqueue((entry.x-1, entry.y-1));
-                            if (entry.x+1 < data.data[entry.y].Length && data.data[entry.y][entry.x+1] != '#')
-                                queue.Enqueue((entry.x+1, entry.y-1));
-                            prev = (prev.x-1, prev.y);
-                            while (data.data[prev.y][prev.x] == '|')
-                            {
-                                data.data[prev.y][prev.x] = '~';
-                                prev = (prev.x-1, prev.y);
-                            }
-                        }
+                        while (next.x + xdiff < data[next.y].Length && data[next.y][next.x + xdiff] == '|') next = (next.x + xdiff, next.y);
                     }
-                    else if (nextChar.NotIn('|', '~'))
+                    else
                     {
-                        data.data[next.y][next.x] = '|';
-                        queue.Enqueue(next);
+                        while (next.x + xdiff >= 0 && data[next.y][next.x + xdiff] == '|') next = (next.x + xdiff, next.y);
                     }
+                    queue.Enqueue(next);
                 }
             }
         }
