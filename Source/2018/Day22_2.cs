@@ -18,15 +18,20 @@ namespace Day22
                 target = (int.Parse(args[0]), int.Parse(args[1]));
             }
 
-            // Sample
+            // Sample - solution: 45
             //Depth = 510;
             //if (target == null)
             //    target = (x: 10, y: 10);
 
-            // Puzzle input
-            Depth = 4002;
+            // Reddit sample - solution: 1010
+            Depth = 8112;
             if (target == null)
-                target = (x: 5, y: 746);
+                target = (x: 13, y: 743);
+
+            // Puzzle input
+            //Depth = 4002;
+            //if (target == null)
+            //    target = (x: 5, y: 746);
 
             if (args.Length >= 3 && args[2].Equals("print", StringComparison.OrdinalIgnoreCase))
             {
@@ -85,9 +90,45 @@ namespace Day22
 
             checked
             {
-                WriteLine($"Solution: {solution.FindShortestPath(target.Value)}");
+                var pathNode = solution.FindShortestPath(target.Value);
+                var duration = pathNode.Duration;
+                var path = new List<PathNode>();
+                var toolChanges = new List<PathNode>();
+
+                var finish = pathNode;
+                while (pathNode != null)
+                {
+                    if (!pathNode.Operation.IsMovement()) toolChanges.Insert(0, pathNode);
+                    path.Insert(0,pathNode);
+                    pathNode = pathNode.Prev;
+                }
+
+                var last = path.First();
+                foreach (var node in path.Skip(1))
+                {
+                    if (node.Operation.IsMovement())
+                    {
+                        WriteLine($"{node.Operation} ({last.Pos.x}, {last.Pos.y}) -> ({node.Pos.x}, {node.Pos.y}) [{node.Duration}]");
+                    }
+                    else
+                    {
+                        WriteLine($"{node.Operation} ({last.Pos.x}, {last.Pos.y}) [{node.Duration}]");
+                    }
+                    last = node;
+                }
+
+                WriteLine($"Solution: {duration}");
             }
         }
+    }
+
+    public class PathNode
+    {
+        public PathNode Prev { get; set; }
+        public long Duration { get; set; }
+        public Tools Tool { get; set; }
+        public Operation Operation { get; set; }
+        public (long x, long y) Pos { get; set; }
     }
 
     public enum CellType
@@ -118,7 +159,7 @@ namespace Day22
 
     public class Solution
     {
-        private Dictionary<(long x, long y), long> _visited = new Dictionary<(long x, long y), long>();
+        private Dictionary<(long x, long y), List<PathNode>> _visited = new Dictionary<(long x, long y), List<PathNode>>();
         private List<QItem> _prioQueue = new List<QItem>();
         private Map _map;
         private (long x, long y) _target;
@@ -131,16 +172,16 @@ namespace Day22
             { Tools.ClimbingGear, new[] { CellType.Rocky, CellType.Wet } }
         };
 
-        public long FindShortestPath((long x, long y) target)
+        public PathNode FindShortestPath((long x, long y) target)
         {
             _longestDuration = 0;
             _target = target;
             _map = new Map(target);
-            EnqueuePossibleOperations(0, (0L, 0L), Tools.Torch);
+            EnqueuePossibleOperations(0, (0L, 0L), Tools.Torch, new PathNode { Tool = Tools.Torch });
             return FindShortestPath();
         }
 
-        private long FindShortestPath()
+        private PathNode FindShortestPath()
         {
             var startTime = DateTime.Now;
             int secondsPassed = 0;
@@ -148,20 +189,30 @@ namespace Day22
             while (true)
             {
                 var deQed = DequeueOperation();
-                var pos = deQed.Pos;
+                var pos = deQed.PathNode.Pos;
+                var tool = deQed.PathNode.Tool;
 
                 if (pos.x == _target.x && pos.y == _target.y)
                 {
-                    return deQed.Tool == Tools.Torch ? deQed.Duration : deQed.Duration + 7;
+                    return tool == Tools.Torch ? deQed.PathNode : new PathNode { Prev = deQed.PathNode, Duration = deQed.PathNode.Duration + 7, Tool = Tools.Torch, Operation = Operation.ChangeToTorch, Pos = deQed.PathNode.Pos };
                 }
 
-                if (IsMovement(deQed.Operation))
+                if (deQed.PathNode.Operation.IsMovement())
                 {
-                    if (_visited.TryGetValue((pos.x, pos.y), out var visitedDuration) &&
-                        visitedDuration < deQed.Duration)
-                    { continue; }
+                    if (_visited.TryGetValue((pos.x, pos.y), out var visitedData))
+                    {
+                        if (visitedData.Any(x => x.Duration <= deQed.PathNode.Duration && x.Tool == tool))
+                            { continue; }
+                    }
+                    else
+                    {
+                        visitedData = new List<PathNode>();
+                        _visited[(pos.x, pos.y)] = visitedData;
+                    }
 
-                    _visited[(pos.x, pos.y)] = deQed.Duration;
+                    var sameTool = visitedData.SingleOrDefault(x => x.Tool == tool);
+                    if (sameTool != null) visitedData.Remove(sameTool);
+                    visitedData.Add(deQed.PathNode);
                 }
 
                 var lastSecondsPassed = secondsPassed;
@@ -171,31 +222,16 @@ namespace Day22
                     WriteLine($"{secondsPassed}s");
                 }
 
-                if (deQed.Duration > _longestDuration)
+                if (deQed.PathNode.Duration > _longestDuration)
                 {
-                    if (deQed.Duration > _longestDuration)
-                        _longestDuration = deQed.Duration;
+                    if (deQed.PathNode.Duration > _longestDuration)
+                        _longestDuration = deQed.PathNode.Duration;
 
                     var solutionTime = (DateTime.Now - startTime).TotalSeconds.ToString("0.00");
                     WriteLine($"Longest duration: {_longestDuration}, Solution time: {solutionTime}s");
                 }
 
-                var tool = deQed.Tool;
-
-                switch (deQed.Operation)
-                {
-                    case Operation op when IsMovement(op):
-                        break;
-
-                    case Operation op when !IsMovement(op):
-                        tool = (Tools)deQed.Operation;
-                        break;
-
-                    default:
-                        throw new InvalidOperationException("Queued data is corrupt!");
-                }
-
-                EnqueuePossibleOperations(deQed.Duration, pos, tool);
+                EnqueuePossibleOperations(deQed.PathNode.Duration, pos, tool, deQed.PathNode);
             }
         }
 
@@ -206,26 +242,43 @@ namespace Day22
             return dq;
         }
 
-        private void EnqueuePossibleOperations(long duration, (long x, long y) pos, Tools tool)
+        private void EnqueuePossibleOperations(long duration, (long x, long y) pos, Tools tool, PathNode pathNode)
         {
-            if (pos.x > 0 && _availability[tool].Contains(_map.GetErosionLevel(pos.x-1, pos.y).type))
-                EnQ(duration+1, (pos.x-1, pos.y), tool, Operation.MoveLeft);
-            if (pos.y > 0 && _availability[tool].Contains(_map.GetErosionLevel(pos.x, pos.y-1).type))
-                EnQ(duration+1, (pos.x, pos.y-1), tool, Operation.MoveUp);
-            if (_availability[tool].Contains(_map.GetErosionLevel(pos.x+1, pos.y).type))
-                EnQ(duration+1, (pos.x+1, pos.y), tool, Operation.MoveRight);
-            if (_availability[tool].Contains(_map.GetErosionLevel(pos.x, pos.y+1).type))
-                EnQ(duration+1, (pos.x, pos.y+1), tool, Operation.MoveDown);
+            if (pos.x > 0 && _availability[tool].Contains(_map.GetErosionLevel(pos.x - 1, pos.y).type))
+            {
+                EnQ(new PathNode { Prev = pathNode, Duration = duration + 1, Tool = tool, Operation = Operation.MoveLeft, Pos = (pos.x - 1, pos.y) });
+            }
+            if (pos.y > 0 && _availability[tool].Contains(_map.GetErosionLevel(pos.x, pos.y - 1).type))
+            {
+                EnQ(new PathNode { Prev = pathNode, Duration = duration + 1, Tool = tool, Operation = Operation.MoveUp, Pos = (pos.x, pos.y - 1) });
+            }
+            if (_availability[tool].Contains(_map.GetErosionLevel(pos.x + 1, pos.y).type))
+            {
+                EnQ(new PathNode { Prev = pathNode, Duration = duration + 1, Tool = tool, Operation = Operation.MoveRight, Pos = (pos.x + 1, pos.y) });
+            }
+            if (_availability[tool].Contains(_map.GetErosionLevel(pos.x, pos.y + 1).type))
+            {
+                EnQ(new PathNode { Prev = pathNode, Duration = duration + 1, Tool = tool, Operation = Operation.MoveDown, Pos = (pos.x, pos.y + 1) });
+            }
 
-            if (tool != Tools.ClimbingGear) EnQ(duration+7, (pos.x, pos.y), tool, Operation.ChangeToClimbingGear);
-            if (tool != Tools.Neither) EnQ(duration+7, (pos.x, pos.y), tool, Operation.ChangeToNeither);
-            if (tool != Tools.Torch) EnQ(duration+7, (pos.x, pos.y), tool, Operation.ChangeToTorch);
+            if (tool != Tools.ClimbingGear)
+            {
+                EnQ(new PathNode { Prev = pathNode, Duration = duration + 7, Tool = (Tools)Operation.ChangeToClimbingGear, Operation = Operation.ChangeToClimbingGear, Pos = (pos.x, pos.y) });
+            }
+            if (tool != Tools.Neither)
+            {
+                EnQ(new PathNode { Prev = pathNode, Duration = duration + 7, Tool = (Tools)Operation.ChangeToNeither, Operation = Operation.ChangeToNeither, Pos = (pos.x, pos.y) });
+            }
+            if (tool != Tools.Torch)
+            {
+                EnQ(new PathNode { Prev = pathNode, Duration = duration + 7, Tool = (Tools)Operation.ChangeToNeither, Operation = Operation.ChangeToNeither , Pos = (pos.x, pos.y) });
+            }
         }
 
-        private void EnQ(long duration, (long x, long y) pos, Tools tool, Operation operation)
+        private void EnQ(PathNode pathNode)
         {
             int index = 0;
-            var newQ = new QItem { Duration = duration, Operation = operation, Pos = pos, Tool = tool };
+            var newQ = new QItem { PathNode = pathNode };
             newQ.CalculatePriority(_target);
             while (index < _prioQueue.Count && _prioQueue[index].Prio < newQ.Prio)
             {
@@ -234,35 +287,24 @@ namespace Day22
 
             _prioQueue.Insert(index, newQ);
         }
-
-        private bool IsMovement(Operation operation)
-        {
-            return (operation == Operation.MoveUp ||
-                    operation == Operation.MoveDown ||
-                    operation == Operation.MoveRight ||
-                    operation == Operation.MoveLeft);
-        }
     }
 
     public struct QItem
     {
         public long Prio { get; set; }
         public long DistanceToTarget { get; set; }
-        public long Duration { get; set; }
-        public Operation Operation { get; set; }
-        public (long x, long y) Pos { get; set; }
-        public Tools Tool { get; set; }
+        public PathNode PathNode { get; set; }
 
         public override string ToString()
         {
-            return $"({Pos.x}, {Pos.y})  D: {Duration}  P: {Prio}  T: {Tool}  OP: {Operation.ToString()}";
+            return $"({PathNode.Pos.x}, {PathNode.Pos.y})  D: {PathNode.Duration}  P: {Prio}  T: {PathNode.Tool}  OP: {PathNode.Operation.ToString()}";
         }
 
         public void CalculatePriority((long x, long y) target)
         {
-            DistanceToTarget = (long)Math.Sqrt(Pow2(Pos.x - target.x) + Pow2(Pos.y - target.y));
-            Prio = Duration + DistanceToTarget*2;
-            if (Operation is Tools) Prio += 4;
+            DistanceToTarget = (long)Math.Sqrt(Pow2(PathNode.Pos.x - target.x) + Pow2(PathNode.Pos.y - target.y));
+            Prio = PathNode.Duration + DistanceToTarget*2;
+            if (!PathNode.Operation.IsMovement()) Prio += 7;
         }
 
         private long Pow2(long input)
@@ -271,7 +313,7 @@ namespace Day22
         }
     }
 
-    public static class PathExtensions
+    public static class Extensions
     {
         public static (long x, long y, Tools tool)[] ClonePath(this (long x, long y, Tools)[] path, bool increaseCapacity = false)
         {
@@ -282,6 +324,14 @@ namespace Day22
                 clone[i] = path[i];
 
             return clone;
+        }
+
+        public static bool IsMovement(this Operation operation)
+        {
+            return (operation == Operation.MoveUp ||
+                    operation == Operation.MoveDown ||
+                    operation == Operation.MoveRight ||
+                    operation == Operation.MoveLeft);
         }
     }
 
