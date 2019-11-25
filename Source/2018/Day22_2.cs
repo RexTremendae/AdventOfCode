@@ -19,14 +19,14 @@ namespace Day22
             }
 
             // Sample
-            Depth = 510;
-            if (target == null)
-                target = (x: 10, y: 10);
+            //Depth = 510;
+            //if (target == null)
+            //    target = (x: 10, y: 10);
 
             // Puzzle input
-            //Depth = 4002;
-            //if (target == null)
-            //    target = (x: 5, y: 746);
+            Depth = 4002;
+            if (target == null)
+                target = (x: 5, y: 746);
 
             if (args.Length >= 3 && args[2].Equals("print", StringComparison.OrdinalIgnoreCase))
             {
@@ -104,20 +104,24 @@ namespace Day22
         Torch
     }
 
-    public enum Movement
+    public enum Operation
     {
-        Up,
-        Down,
-        Left,
-        Right
+        ChangeToNeither,
+        ChangeToClimbingGear,
+        ChangeToTorch,
+
+        MoveUp,
+        MoveDown,
+        MoveLeft,
+        MoveRight
     }
 
     public class Solution
     {
+        private Dictionary<(long x, long y), long> _visited = new Dictionary<(long x, long y), long>();
         private List<QItem> _prioQueue = new List<QItem>();
         private Map _map;
         private (long x, long y) _target;
-        private long _furthestDistance;
         private long _longestDuration;
 
         private Dictionary<Tools, CellType[]> _availability = new Dictionary<Tools, CellType[]>
@@ -129,13 +133,11 @@ namespace Day22
 
         public long FindShortestPath((long x, long y) target)
         {
-            _furthestDistance = 0;
             _longestDuration = 0;
-            var path = new (long x, long y, Tools tool)[] { (0L, 0L, Tools.Torch) };
             _target = target;
             _map = new Map(target);
-            EnqueuePossibleOperations(0, path);
-            return FindShortestPath() - 1;
+            EnqueuePossibleOperations(0, (0L, 0L), Tools.Torch);
+            return FindShortestPath();
         }
 
         private long FindShortestPath()
@@ -146,10 +148,20 @@ namespace Day22
             while (true)
             {
                 var deQed = DequeueOperation();
-                var pos = deQed.Path.Last();
+                var pos = deQed.Pos;
+
                 if (pos.x == _target.x && pos.y == _target.y)
                 {
-                    return pos.tool == Tools.Torch ? deQed.Duration : deQed.Duration + 7;
+                    return deQed.Tool == Tools.Torch ? deQed.Duration : deQed.Duration + 7;
+                }
+
+                if (IsMovement(deQed.Operation))
+                {
+                    if (_visited.TryGetValue((pos.x, pos.y), out var visitedDuration) &&
+                        visitedDuration < deQed.Duration)
+                    { continue; }
+
+                    _visited[(pos.x, pos.y)] = deQed.Duration;
                 }
 
                 var lastSecondsPassed = secondsPassed;
@@ -159,45 +171,31 @@ namespace Day22
                     WriteLine($"{secondsPassed}s");
                 }
 
-                var pathClone = deQed.Path.ClonePath(true);
-                if (pathClone.Length > _furthestDistance || deQed.Duration > _longestDuration)
+                if (deQed.Duration > _longestDuration)
                 {
-                    if (pathClone.Length > _furthestDistance)
-                        _furthestDistance = pathClone.Length;
-
                     if (deQed.Duration > _longestDuration)
                         _longestDuration = deQed.Duration;
+
                     var solutionTime = (DateTime.Now - startTime).TotalSeconds.ToString("0.00");
-                    WriteLine($"Longest path: {_furthestDistance}, Longest duration: {_longestDuration}, Solution time: {solutionTime}s");
+                    WriteLine($"Longest duration: {_longestDuration}, Solution time: {solutionTime}s");
                 }
+
+                var tool = deQed.Tool;
 
                 switch (deQed.Operation)
                 {
-                    case Movement move when move == Movement.Up:
-                        pathClone[deQed.Path.Length] = (pos.x, pos.y-1, pos.tool);
+                    case Operation op when IsMovement(op):
                         break;
 
-                    case Movement move when move == Movement.Down:
-                        pathClone[deQed.Path.Length] = (pos.x, pos.y+1, pos.tool);
-                        break;
-
-                    case Movement move when move == Movement.Left:
-                        pathClone[deQed.Path.Length] = (pos.x-1, pos.y, pos.tool);
-                        break;
-
-                    case Movement move when move == Movement.Right:
-                        pathClone[deQed.Path.Length] = (pos.x+1, pos.y, pos.tool);
-                        break;
-
-                    case Tools tool:
-                        pathClone[deQed.Path.Length] = (pos.x, pos.y, tool);
+                    case Operation op when !IsMovement(op):
+                        tool = (Tools)deQed.Operation;
                         break;
 
                     default:
                         throw new InvalidOperationException("Queued data is corrupt!");
                 }
 
-                EnqueuePossibleOperations(deQed.Duration, pathClone);
+                EnqueuePossibleOperations(deQed.Duration, pos, tool);
             }
         }
 
@@ -208,28 +206,26 @@ namespace Day22
             return dq;
         }
 
-        private void EnqueuePossibleOperations(long duration, (long x, long y, Tools tool)[] path)
+        private void EnqueuePossibleOperations(long duration, (long x, long y) pos, Tools tool)
         {
-            var pos = path.Last();
+            if (pos.x > 0 && _availability[tool].Contains(_map.GetErosionLevel(pos.x-1, pos.y).type))
+                EnQ(duration+1, (pos.x-1, pos.y), tool, Operation.MoveLeft);
+            if (pos.y > 0 && _availability[tool].Contains(_map.GetErosionLevel(pos.x, pos.y-1).type))
+                EnQ(duration+1, (pos.x, pos.y-1), tool, Operation.MoveUp);
+            if (_availability[tool].Contains(_map.GetErosionLevel(pos.x+1, pos.y).type))
+                EnQ(duration+1, (pos.x+1, pos.y), tool, Operation.MoveRight);
+            if (_availability[tool].Contains(_map.GetErosionLevel(pos.x, pos.y+1).type))
+                EnQ(duration+1, (pos.x, pos.y+1), tool, Operation.MoveDown);
 
-            if (pos.x > 0 && _availability[pos.tool].Contains(_map.GetErosionLevel(pos.x-1, pos.y).type) && !path.Any(p => p.x == pos.x-1 && p.y == pos.y))
-                EnQ(duration+1, path, (pos.x-1, pos.y), Movement.Left);
-            if (pos.y > 0 && _availability[pos.tool].Contains(_map.GetErosionLevel(pos.x, pos.y-1).type) && !path.Any(p => p.x == pos.x && p.y == pos.y-1))
-                EnQ(duration+1, path, (pos.x, pos.y-1), Movement.Up);
-            if (_availability[pos.tool].Contains(_map.GetErosionLevel(pos.x+1, pos.y).type) && !path.Any(p => p.x == pos.x+1 && p.y == pos.y))
-                EnQ(duration+1, path, (pos.x+1, pos.y), Movement.Right);
-            if (_availability[pos.tool].Contains(_map.GetErosionLevel(pos.x, pos.y+1).type) && !path.Any(p => p.x == pos.x && p.y == pos.y+1))
-                EnQ(duration+1, path, (pos.x, pos.y+1), Movement.Down);
-
-            if (pos.tool != Tools.ClimbingGear) EnQ(duration+7, path, (pos.x, pos.y), Tools.ClimbingGear);
-            if (pos.tool != Tools.Neither) EnQ(duration+7, path, (pos.x, pos.y), Tools.Neither);
-            if (pos.tool != Tools.Torch) EnQ(duration+7, path, (pos.x, pos.y), Tools.Torch);
+            if (tool != Tools.ClimbingGear) EnQ(duration+7, (pos.x, pos.y), tool, Operation.ChangeToClimbingGear);
+            if (tool != Tools.Neither) EnQ(duration+7, (pos.x, pos.y), tool, Operation.ChangeToNeither);
+            if (tool != Tools.Torch) EnQ(duration+7, (pos.x, pos.y), tool, Operation.ChangeToTorch);
         }
 
-        private void EnQ(long duration, (long x, long y, Tools tool)[] path, (long x, long y) coord, object operation)
+        private void EnQ(long duration, (long x, long y) pos, Tools tool, Operation operation)
         {
             int index = 0;
-            var newQ = new QItem { Duration = duration, Path = path.ClonePath(), Operation = operation };
+            var newQ = new QItem { Duration = duration, Operation = operation, Pos = pos, Tool = tool };
             newQ.CalculatePriority(_target);
             while (index < _prioQueue.Count && _prioQueue[index].Prio < newQ.Prio)
             {
@@ -238,6 +234,14 @@ namespace Day22
 
             _prioQueue.Insert(index, newQ);
         }
+
+        private bool IsMovement(Operation operation)
+        {
+            return (operation == Operation.MoveUp ||
+                    operation == Operation.MoveDown ||
+                    operation == Operation.MoveRight ||
+                    operation == Operation.MoveLeft);
+        }
     }
 
     public struct QItem
@@ -245,21 +249,20 @@ namespace Day22
         public long Prio { get; set; }
         public long DistanceToTarget { get; set; }
         public long Duration { get; set; }
-        public object Operation { get; set; }
-        public (long x, long y, Tools tool)[] Path { get; set; }
+        public Operation Operation { get; set; }
+        public (long x, long y) Pos { get; set; }
+        public Tools Tool { get; set; }
 
         public override string ToString()
         {
-            var last = Path.Last();
-            return $"({last.x}, {last.y})  D: {Duration}  P: {Prio}  T: {last.tool}  OP: {Operation.ToString()}";
+            return $"({Pos.x}, {Pos.y})  D: {Duration}  P: {Prio}  T: {Tool}  OP: {Operation.ToString()}";
         }
 
         public void CalculatePriority((long x, long y) target)
         {
-            var pos = Path.Last();
-            DistanceToTarget = (long)Math.Sqrt(Pow2(pos.x - target.x) + Pow2(pos.y - target.y));
+            DistanceToTarget = (long)Math.Sqrt(Pow2(Pos.x - target.x) + Pow2(Pos.y - target.y));
             Prio = Duration + DistanceToTarget*2;
-            if (Operation is Tools) Prio += 7;
+            if (Operation is Tools) Prio += 4;
         }
 
         private long Pow2(long input)
