@@ -23,15 +23,10 @@ namespace Day22
             //if (target == null)
             //    target = (x: 10, y: 10);
 
-            // Reddit sample - solution: 1010
-            Depth = 8112;
-            if (target == null)
-                target = (x: 13, y: 743);
-
             // Puzzle input
-            //Depth = 4002;
-            //if (target == null)
-            //    target = (x: 5, y: 746);
+            Depth = 4002;
+            if (target == null)
+                target = (x: 5, y: 23);
 
             if (args.Length >= 3 && args[2].Equals("print", StringComparison.OrdinalIgnoreCase))
             {
@@ -98,7 +93,7 @@ namespace Day22
                 var finish = pathNode;
                 while (pathNode != null)
                 {
-                    if (!pathNode.Operation.IsMovement()) toolChanges.Insert(0, pathNode);
+                    if (pathNode.Operation.IsToolChange()) toolChanges.Insert(0, pathNode);
                     path.Insert(0,pathNode);
                     pathNode = pathNode.Prev;
                 }
@@ -133,20 +128,22 @@ namespace Day22
 
     public enum CellType
     {
-        Rocky,
-        Wet,
-        Narrow
+        Rocky,  // .
+        Wet,    // =
+        Narrow  // |
     }
 
     public enum Tools
     {
-        Neither,
+        Neither = 1,
         ClimbingGear,
         Torch
     }
 
     public enum Operation
     {
+        None = 0,
+
         ChangeToNeither,
         ChangeToClimbingGear,
         ChangeToTorch,
@@ -163,21 +160,25 @@ namespace Day22
         private List<QItem> _prioQueue = new List<QItem>();
         private Map _map;
         private (long x, long y) _target;
-        private long _longestDuration;
+        private long _shortestDistanceLeft;
+        private Dictionary<long, long> _durationsQueuedCount = new Dictionary<long, long>();
+        private long _minimalDurationQueued = long.MaxValue;
 
         private Dictionary<Tools, CellType[]> _availability = new Dictionary<Tools, CellType[]>
         {
-            { Tools.Neither,      new[] { CellType.Wet, CellType.Narrow } },
-            { Tools.Torch,        new[] { CellType.Rocky, CellType.Narrow } },
-            { Tools.ClimbingGear, new[] { CellType.Rocky, CellType.Wet } }
+            { Tools.Neither,      new[] { CellType.Wet /* = */, CellType.Narrow  /* | */ } },
+            { Tools.Torch,        new[] { CellType.Rocky /* . */, CellType.Narrow /* | */ } },
+            { Tools.ClimbingGear, new[] { CellType.Rocky /* . */, CellType.Wet /* = */ } }
         };
 
         public PathNode FindShortestPath((long x, long y) target)
         {
-            _longestDuration = 0;
+            _shortestDistanceLeft = long.MaxValue;
             _target = target;
             _map = new Map(target);
-            EnqueuePossibleOperations(0, (0L, 0L), Tools.Torch, new PathNode { Tool = Tools.Torch });
+            EnqueuePossibleOperations(new PathNode {
+                Tool = Tools.Torch, Pos = (0L, 0L),
+                Duration = 0, Operation = Operation.None, Prev = null });
             return FindShortestPath();
         }
 
@@ -186,15 +187,22 @@ namespace Day22
             var startTime = DateTime.Now;
             int secondsPassed = 0;
 
-            while (true)
+            PathNode shortest = null;
+            var deQed = DequeueOperation();
+
+            while (shortest == null || shortest.Duration > _minimalDurationQueued)
             {
-                var deQed = DequeueOperation();
                 var pos = deQed.PathNode.Pos;
                 var tool = deQed.PathNode.Tool;
 
                 if (pos.x == _target.x && pos.y == _target.y)
                 {
-                    return tool == Tools.Torch ? deQed.PathNode : new PathNode { Prev = deQed.PathNode, Duration = deQed.PathNode.Duration + 7, Tool = Tools.Torch, Operation = Operation.ChangeToTorch, Pos = deQed.PathNode.Pos };
+                    var sln = deQed.PathNode;
+                    if (tool != Tools.Torch)
+                        sln = new PathNode { Prev = sln, Duration = sln.Duration + 7, Tool = Tools.Torch, Operation = Operation.ChangeToTorch, Pos = sln.Pos };
+
+                    if (shortest == null || shortest.Duration > sln.Duration)
+                        shortest = sln;
                 }
 
                 if (deQed.PathNode.Operation.IsMovement())
@@ -202,7 +210,10 @@ namespace Day22
                     if (_visited.TryGetValue((pos.x, pos.y), out var visitedData))
                     {
                         if (visitedData.Any(x => x.Duration <= deQed.PathNode.Duration && x.Tool == tool))
-                            { continue; }
+                            {
+                                deQed = DequeueOperation();
+                                continue;
+                            }
                     }
                     else
                     {
@@ -222,56 +233,87 @@ namespace Day22
                     WriteLine($"{secondsPassed}s");
                 }
 
-                if (deQed.PathNode.Duration > _longestDuration)
+                if (deQed.DistanceToTarget < _shortestDistanceLeft)
                 {
-                    if (deQed.PathNode.Duration > _longestDuration)
-                        _longestDuration = deQed.PathNode.Duration;
+                    _shortestDistanceLeft = deQed.DistanceToTarget;
 
                     var solutionTime = (DateTime.Now - startTime).TotalSeconds.ToString("0.00");
-                    WriteLine($"Longest duration: {_longestDuration}, Solution time: {solutionTime}s");
+                    WriteLine($"Distance left: {_shortestDistanceLeft}, Solution time: {solutionTime}s");
                 }
 
-                EnqueuePossibleOperations(deQed.PathNode.Duration, pos, tool, deQed.PathNode);
+                EnqueuePossibleOperations(deQed.PathNode);
+                deQed = DequeueOperation();
             }
+
+            return shortest;
         }
 
         private QItem DequeueOperation()
         {
             var dq = _prioQueue.First();
             _prioQueue.RemoveAt(0);
+            _durationsQueuedCount[dq.PathNode.Duration]--;
+            if (_durationsQueuedCount[dq.PathNode.Duration] == 0 && _minimalDurationQueued == dq.PathNode.Duration)
+            {
+                var minDuration = _minimalDurationQueued + 1;
+                while(true)
+                {
+                    if (_durationsQueuedCount.TryGetValue(minDuration, out var value) && value > 0)
+                    {
+                        _minimalDurationQueued = minDuration;
+                        break;
+                    }
+
+                    minDuration ++;
+                }
+            }
             return dq;
         }
 
-        private void EnqueuePossibleOperations(long duration, (long x, long y) pos, Tools tool, PathNode pathNode)
+        private void EnqueuePossibleOperations(PathNode pathNode)
         {
+            var tool = pathNode.Tool;
+            var pos = pathNode.Pos;
+            var duration = pathNode.Duration;
+
             if (pos.x > 0 && _availability[tool].Contains(_map.GetErosionLevel(pos.x - 1, pos.y).type))
             {
-                EnQ(new PathNode { Prev = pathNode, Duration = duration + 1, Tool = tool, Operation = Operation.MoveLeft, Pos = (pos.x - 1, pos.y) });
+                EnQ(new PathNode { Prev = pathNode, Duration = duration + 1,
+                    Tool = tool, Operation = Operation.MoveLeft, Pos = (pos.x - 1, pos.y) });
             }
             if (pos.y > 0 && _availability[tool].Contains(_map.GetErosionLevel(pos.x, pos.y - 1).type))
             {
-                EnQ(new PathNode { Prev = pathNode, Duration = duration + 1, Tool = tool, Operation = Operation.MoveUp, Pos = (pos.x, pos.y - 1) });
+                EnQ(new PathNode { Prev = pathNode, Duration = duration + 1,
+                    Tool = tool, Operation = Operation.MoveUp, Pos = (pos.x, pos.y - 1) });
             }
             if (_availability[tool].Contains(_map.GetErosionLevel(pos.x + 1, pos.y).type))
             {
-                EnQ(new PathNode { Prev = pathNode, Duration = duration + 1, Tool = tool, Operation = Operation.MoveRight, Pos = (pos.x + 1, pos.y) });
+                EnQ(new PathNode { Prev = pathNode, Duration = duration + 1,
+                    Tool = tool, Operation = Operation.MoveRight, Pos = (pos.x + 1, pos.y) });
             }
             if (_availability[tool].Contains(_map.GetErosionLevel(pos.x, pos.y + 1).type))
             {
-                EnQ(new PathNode { Prev = pathNode, Duration = duration + 1, Tool = tool, Operation = Operation.MoveDown, Pos = (pos.x, pos.y + 1) });
+                EnQ(new PathNode { Prev = pathNode, Duration = duration + 1,
+                    Tool = tool, Operation = Operation.MoveDown, Pos = (pos.x, pos.y + 1) });
             }
 
-            if (tool != Tools.ClimbingGear)
+            if (pathNode.Prev?.Operation.IsMovement() ?? false)
             {
-                EnQ(new PathNode { Prev = pathNode, Duration = duration + 7, Tool = (Tools)Operation.ChangeToClimbingGear, Operation = Operation.ChangeToClimbingGear, Pos = (pos.x, pos.y) });
-            }
-            if (tool != Tools.Neither)
-            {
-                EnQ(new PathNode { Prev = pathNode, Duration = duration + 7, Tool = (Tools)Operation.ChangeToNeither, Operation = Operation.ChangeToNeither, Pos = (pos.x, pos.y) });
-            }
-            if (tool != Tools.Torch)
-            {
-                EnQ(new PathNode { Prev = pathNode, Duration = duration + 7, Tool = (Tools)Operation.ChangeToNeither, Operation = Operation.ChangeToNeither , Pos = (pos.x, pos.y) });
+                if (tool != Tools.ClimbingGear)
+                {
+                    EnQ(new PathNode { Prev = pathNode, Duration = duration + 7, Tool = (Tools)Operation.ChangeToClimbingGear,
+                        Operation = Operation.ChangeToClimbingGear, Pos = pos });
+                }
+                if (tool != Tools.Neither)
+                {
+                    EnQ(new PathNode { Prev = pathNode, Duration = duration + 7, Tool = (Tools)Operation.ChangeToNeither,
+                        Operation = Operation.ChangeToNeither, Pos = pos });
+                }
+                if (tool != Tools.Torch)
+                {
+                    EnQ(new PathNode { Prev = pathNode, Duration = duration + 7, Tool = (Tools)Operation.ChangeToTorch,
+                        Operation = Operation.ChangeToTorch, Pos = pos });
+                }
             }
         }
 
@@ -286,6 +328,16 @@ namespace Day22
             }
 
             _prioQueue.Insert(index, newQ);
+            if (_durationsQueuedCount.ContainsKey(newQ.PathNode.Duration))
+            {
+                _durationsQueuedCount[newQ.PathNode.Duration]++;
+            }
+            else
+            {
+                _durationsQueuedCount[newQ.PathNode.Duration] = 1;
+            }
+
+            if (_minimalDurationQueued > newQ.PathNode.Duration) _minimalDurationQueued = newQ.PathNode.Duration;
         }
     }
 
@@ -302,28 +354,16 @@ namespace Day22
 
         public void CalculatePriority((long x, long y) target)
         {
-            DistanceToTarget = (long)Math.Sqrt(Pow2(PathNode.Pos.x - target.x) + Pow2(PathNode.Pos.y - target.y));
-            Prio = PathNode.Duration + DistanceToTarget*2;
-            if (!PathNode.Operation.IsMovement()) Prio += 7;
-        }
-
-        private long Pow2(long input)
-        {
-            return input * input;
+            DistanceToTarget = Math.Abs(target.x - PathNode.Pos.x) + Math.Abs(target.y - PathNode.Pos.y);
+            Prio = PathNode.Duration + DistanceToTarget;
         }
     }
 
     public static class Extensions
     {
-        public static (long x, long y, Tools tool)[] ClonePath(this (long x, long y, Tools)[] path, bool increaseCapacity = false)
+        public static bool IsToolChange(this Operation operation)
         {
-            var cloneLength = path.Length;
-            if (increaseCapacity) cloneLength++;
-            var clone = new (long x, long y, Tools)[cloneLength];
-            for (int i = 0; i < path.Length; i++)
-                clone[i] = path[i];
-
-            return clone;
+            return !operation.IsMovement() && operation != Operation.None;
         }
 
         public static bool IsMovement(this Operation operation)
