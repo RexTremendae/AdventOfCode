@@ -10,6 +10,7 @@
     <Compile Remove="Input\**" />
     <Compile Remove="Source\**" />
     <Compile Remove="_NCrunch_AoC\**" />
+    <Compile Remove="Template.cs" />
     <EmbeddedResource Remove="Input\**" />
     <EmbeddedResource Remove="Source\**" />
     <EmbeddedResource Remove="_NCrunch_AoC\**" />
