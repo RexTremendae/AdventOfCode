@@ -2,11 +2,11 @@
 # .net
 ##########
 
-/bin/
-/obj/
-/.vs/
-/packages/
-/core/
+bin/
+obj/
+.vs/
+packages/
+core/
 
 *.pdb
 *.exe
