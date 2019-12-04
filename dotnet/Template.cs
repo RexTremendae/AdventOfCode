@@ -76,17 +76,25 @@ namespace Day
         }
     }
 
-    public class Point
+    public struct Point
     {
-        public Point(int x, int y)
+        public Point(long x, long y)
         {
             X = x;
             Y = y;
         }
 
-        public int X { get; }
+        public static implicit operator Point((long x, long y) pos) => new Point(pos.x, pos.y);
+        public static implicit operator (long x, long y) (Point pos) => (pos.X, pos.Y);
 
-        public int Y { get; }
+        public long X { get; }
+
+        public long Y { get; }
+
+        public long Manhattan()
+        {
+            return Math.Abs(X) + Math.Abs(Y);
+        }
 
         public static Point Parse(string input)
         {
@@ -97,19 +105,24 @@ namespace Day
             return new Point(x, y);
         }
 
+        public static Point operator +(Point p1, Point p2)
+        {
+            return new Point(p1.X + p2.X, p1.Y + p2.Y);
+        }
+
+        public static Point operator -(Point p1, Point p2)
+        {
+            return new Point(p1.X - p2.X, p1.Y - p2.Y);
+        }
+
         public override int GetHashCode()
         {
-            return Tuple.Create(X, Y).GetHashCode();
+            return (X, Y).GetHashCode();
         }
 
         public override bool Equals(object other)
         {
-            Point otherPoint = other as Point;
-            if (otherPoint == null)
-            {
-                return false;
-            }
-
+            if (!(other is Point otherPoint)) return false;
             return X == otherPoint.X && Y == otherPoint.Y;
         }
 
