@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using static System.Console;
 
 namespace Day12
@@ -15,7 +17,7 @@ namespace Day12
             (3, (x:  4, y: 14, z:  4), (x: 0, y: 0, z: 0))
         };
 */
-/*
+
         // Easy example
         private (int id, Point3D position, Point3D velocity)[] _moons = new (int, Point3D, Point3D)[] {
             (0, (x: -1, y:   0, z:  2), (x: 0, y: 0, z: 0)),
@@ -23,7 +25,8 @@ namespace Day12
             (2, (x:  4, y:  -8, z:  8), (x: 0, y: 0, z: 0)),
             (3, (x:  3, y:   5, z: -1), (x: 0, y: 0, z: 0))
         };
-*/
+
+/*
         // Hard example
         private (int id, Point3D position, Point3D velocity)[] _moons = new (int, Point3D, Point3D)[] {
             (0, (x: -8, y: -10, z:  0), (x: 0, y: 0, z: 0)),
@@ -31,29 +34,60 @@ namespace Day12
             (2, (x:  2, y:  -7, z:  3), (x: 0, y: 0, z: 0)),
             (3, (x:  9, y:  -8, z: -3), (x: 0, y: 0, z: 0))
         };
-
+*/
         private HashSet<State> _history = new HashSet<State>();
 
         public static void Main()
         {
+            var start = DateTime.Now;
             new Program().Run();
+            var duration = DateTime.Now - start;
+            WriteLine($"{duration.TotalMinutes:0.00} minutes passed");
         }
 
         public void Run()
         {
-            var count = 0L;
-            var state = new State(_moons);
-            while(!_history.Contains(state))
+            char dimension = 'X';
+            var cycle = new long[3];
+
+            for (int i = 0; i < 3; i++, dimension++)
             {
-                _history.Add(state);
-                DoTimeStep();
-                state = new State(_moons);
-                count++;
-                var countFormat = count.ToString("# ### ### ### ###");
-                if (count % 1000 == 0) WriteLine($"{countFormat}...");
+                var count = 0L;
+                var state = new State(_moons, dimension);
+                while(!_history.Contains(state))
+                {
+                    _history.Add(state);
+
+                    DoTimeStep(dimension);
+                    count++;
+
+                    var countFormat = count.ToString("# ### ### ###").PadLeft(13);
+                    if (count % 1000 == 0) WriteLine($"{countFormat}...");
+
+                    state = new State(_moons, dimension);
+                }
+
+                WriteLine($"{dimension}: {count}");
+                cycle[dimension-'X'] = count;
             }
 
-            WriteLine(count);
+            var final = 0L;
+            var xDiff = cycle[0];
+            var yDiff = cycle[1];
+            var zDiff = cycle[2];
+
+            do
+            {
+                final += Math.Min(xDiff, Math.Min(yDiff, zDiff));
+
+                xDiff = cycle[0] - final % cycle[0];
+                yDiff = cycle[1] - final % cycle[1];
+                zDiff = cycle[2] - final % cycle[2];
+            }
+            while (xDiff != cycle[0] || yDiff != cycle[1] || zDiff != cycle[2]);
+
+            WriteLine();
+            WriteLine(final);
         }
 
         private void PrintState(int step)
@@ -66,29 +100,40 @@ namespace Day12
             WriteLine();
         }
 
-        private void DoTimeStep()
+        private void DoTimeStep(char dimension)
         {
+            dimension = char.ToLower(dimension);
+
             foreach (var moon1 in _moons)
             foreach (var moon2 in _moons)
             {
                 if (moon1.id >= moon2.id) continue;
+                if (dimension == 'x')
+                {
                 if (moon1.position.X != moon2.position.X)
                 {
                     var change = moon1.position.X > moon2.position.X ? -1 : 1;
                     moon1.velocity.X += change;
                     moon2.velocity.X -= change;
                 }
+                }
+                if (dimension == 'y')
+                {
                 if (moon1.position.Y != moon2.position.Y)
                 {
                     var change = moon1.position.Y > moon2.position.Y ? -1 : 1;
                     moon1.velocity.Y += change;
                     moon2.velocity.Y -= change;
                 }
+                }
+                if (dimension == 'z')
+                {
                 if (moon1.position.Z != moon2.position.Z)
                 {
                     var change = moon1.position.Z > moon2.position.Z ? -1 : 1;
                     moon1.velocity.Z += change;
                     moon2.velocity.Z -= change;
+                }
                 }
             }
 
@@ -105,20 +150,21 @@ namespace Day12
     {
         private long[] _data;
 
-        public State((int id, Point3D position, Point3D velocity)[] moons)
+        public State((int id, Point3D position, Point3D velocity)[] moons, char dimension)
         {
-            _data = new long[24];
+            dimension = char.ToLower(dimension);
+            _data = new long[8];
 
             int idx = 0;
             foreach (var m in moons)
             {
-                _data[idx++] = m.velocity.X;
-                _data[idx++] = m.velocity.Y;
-                _data[idx++] = m.velocity.Z;
+                if (dimension == 'x') _data[idx++] = m.velocity.X;
+                if (dimension == 'y') _data[idx++] = m.velocity.Y;
+                if (dimension == 'z') _data[idx++] = m.velocity.Z;
 
-                _data[idx++] = m.position.X;
-                _data[idx++] = m.position.Y;
-                _data[idx++] = m.position.Z;
+                if (dimension == 'x') _data[idx++] = m.position.X;
+                if (dimension == 'y') _data[idx++] = m.position.Y;
+                if (dimension == 'z') _data[idx++] = m.position.Z;
             }
         }
 
