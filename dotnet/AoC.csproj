@@ -12,6 +12,7 @@
     <Compile Remove="_NCrunch_AoC\**" />
     <Compile Remove="Template.cs" />
     <Compile Remove="Day12_2.cs" />
+    <Compile Remove="Day14_1.cs" />
     <EmbeddedResource Remove="Input\**" />
     <EmbeddedResource Remove="Source\**" />
     <EmbeddedResource Remove="_NCrunch_AoC\**" />
