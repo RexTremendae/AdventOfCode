@@ -1,0 +1,43 @@
+                                         ###############
+                                         #             #
+                                         #   Sick Bay  #
+                                         #  (photons)  #
+                                         ######  #######
+                                         #             #
+                                         #   Hallway   #
+                                         #  (hologram) #
+                                         ######  #######
+                                    #  #      #  #
+#####################################  ########  #
+#                  #             # Security   #  #
+#     Stables        Engineering   checkpoint #  #
+#     (wreath)     #(molten lava)#            #  #
+#########  #########             #    #########  #########
+#                  ####################                  #
+#     Holodeck                            Observatory    #
+#   (fuel cell)    ####################    (manifold)    #
+#########  #########                  #########  #########
+#                  # Hot Choclate Fnt #       #  #
+#     Kitchen         (electromagnet) #       #  #
+#                  #########  #########       #  #
+####################     Corridor     #########  #########
+#                  #   (fixed point)  #                  #
+#      Arcade      ####################    Navigation    #
+#     (boulder)                                          #
+#########  ####################################  #########
+#    Warp Drive    #                          #  #
+#   Maintenance    #                          #  #
+#   (Escape Pod)   #                          #  #
+####################                  #########  #########
+#                  ####################                  #
+#   Science lab                           Hull Breach    #
+#                  ####################                  #
+#########  #########                  #########  #########
+#                  #                  #                  #
+#     Passages     #                  #   Crew Quarters  #
+#     (polygon)    #                  #                  #
+#########  #########                  #########  #########
+#                  #                  #                  #
+# Gift Wrap Centre #                  #     Storage      #
+#  (infinite loop) #                  #   (tambourine)   #
+####################                  ####################
