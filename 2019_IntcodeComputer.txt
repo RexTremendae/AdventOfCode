@@ -1,0 +1,62 @@
+ABCDE
+21002
+
+DE - two-digit opcode,      02 == opcode 2
+ C - mode of 1st parameter,  0 == position mode (default)
+ B - mode of 2nd parameter,  1 == immediate mode
+ A - mode of 3rd parameter,  2 == relative mode
+
+Parameters that an instruction writes to will never be in immediate mode.
+
+Normally, after an instruction is finished, the instruction pointer increases
+by the number of values in that instruction. However, if the instruction modifies
+the instruction pointer, that value is used and the instruction pointer is not
+automatically increased.
+
+The computer's available memory should be much larger than the initial program.
+Memory beyond the initial program starts with the value 0 and can be read or written
+like any other memory. (It is invalid to try to access memory at a negative address, though.)
+
+
+
+* Opcode 1 (a, b, t)    ADD
+Adds together numbers read from two positions and stores the
+result in a third position. The three integers immediately after the opcode
+tell you these three positions - the first two indicate the positions from which
+you should read the input values, and the third indicates the position at which
+the output should be stored.
+
+* Opcode 2 (a, b, t)    MULTIPLY
+Exactly the same as add, but with multiply operation instead.
+
+* Opcode 3 (t)          INPUT
+Takes a single integer as input and saves it to the position given by its only parameter.
+For example, the instruction 3,50 would take an input value and store it at address 50.
+
+* Opcode 4 (t)          OUTPUT
+Outputs the value of its only parameter.
+For example, the instruction 4,50 would output the value at address 50.
+
+* Opcode 5 (c, j)       JUMP-IF-TRUE
+If the first parameter is non-zero, it sets the instruction pointer to the value from
+the second parameter. Otherwise, it does nothing.
+
+* Opcode 6 (c, j)       JUMP-IF-FALSE
+If the first parameter is zero, it sets the instruction pointer to the value from
+the second parameter. Otherwise, it does nothing.
+
+* Opcode 7 (a, b, t)    LESS-THAN
+If the first parameter is less than the second parameter, it stores 1 in the position
+given by the third parameter. Otherwise, it stores 0.
+
+* Opcode 8 (a, b, t)    EQUALS
+If the first parameter is equal to the second parameter, it stores 1 in the position
+given by the third parameter. Otherwise, it stores 0.
+
+* Opcode 9 (r)          ADJUST RELATIVE BASE
+Adjusts the relative base by the value of its only parameter. The relative base increases
+(or decreases, if the value is negative) by the value of the parameter.
+
+* Opcode 99 ()          TERMINATE
+
+
