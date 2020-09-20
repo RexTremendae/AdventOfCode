@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +14,10 @@
     <Compile Remove="Template.cs" />
     <Compile Remove="Day12_2.cs" />
     <Compile Remove="Day14_1.cs" />
+    <Compile Remove="Day16_2.cs" />
+    <Compile Remove="Day18_1.cs" />
+    <Compile Remove="2019_IntcodeComputer\IntcodeComputer.cs" />
+    <Compile Remove="2019_IntcodeComputer\IntcodeComputerTests.cs" />
     <EmbeddedResource Remove="Input\**" />
     <EmbeddedResource Remove="Source\**" />
     <EmbeddedResource Remove="_NCrunch_AoC\**" />
