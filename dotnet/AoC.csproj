@@ -12,10 +12,7 @@
     <Compile Remove="Source\**" />
     <Compile Remove="_NCrunch_AoC\**" />
     <Compile Remove="Template.cs" />
-    <Compile Remove="Day12_2.cs" />
-    <Compile Remove="Day14_1.cs" />
-    <Compile Remove="Day16_2.cs" />
-    <Compile Remove="Day18_1.cs" />
+    <Compile Remove="WIP\*" />
     <Compile Remove="2019_IntcodeComputer\IntcodeComputer.cs" />
     <Compile Remove="2019_IntcodeComputer\IntcodeComputerTests.cs" />
     <EmbeddedResource Remove="Input\**" />
