@@ -6,6 +6,8 @@ using static System.Console;
 
 namespace Day18
 {
+    using Connections = Dictionary<char, Dictionary<char, (int steps, char[] doors)>>;
+
     public class Program
     {
         public static void Main()
@@ -19,10 +21,227 @@ namespace Day18
 
             var (map, start) = Map.ReadData("Day18.txt");
             map.Print(start);
+            var totalKeyCount = map.Keys.Count;
 
-            var (steps, path) = FindShortestPath(start, map, false, false);
-            WriteLine(path);
-            WriteLine(steps);
+            var connections = FindConnections(start, map, false);
+            var initial = connections['@'];
+            connections.Remove('@');
+
+            var q = new List<(int prio, int steps, char pos, Connections connections, char[] collectedKeys)>();
+            var allKeys = map.Keys.Values.OrderBy(x => x).ToArray();
+
+            foreach (var (key, init) in initial)
+            {
+                var connectionClone = connections.ToDictionary(key => key.Key, value => value.Value);
+                var prio = init.steps + CalculateHeuristic(key, connections, map, new [] { key });
+
+                int idx = 0;
+                while (idx < q.Count && q[idx].prio < prio)
+                {
+                    idx++;
+                }
+
+                q.Insert(idx, (prio, init.steps, key, connectionClone, new[] { key }));
+            }
+
+            var totalSeconds = 0;
+            var lastTotalSeconds = 0;
+            var maxCollected = 0;
+            var startTime = DateTime.Now;
+
+            var visited = new Dictionary<string, int>();
+
+            for (;;)
+            {
+                var dq = q[0];
+                q.RemoveAt(0);
+
+                if (dq.collectedKeys.Length == allKeys.Length)
+                {
+                    WriteLine(dq.steps);
+                    break;
+                }
+
+                totalSeconds = (int)(DateTime.Now - startTime).TotalSeconds;
+                var printStatus = false;
+                if (dq.collectedKeys.Length > maxCollected)
+                {
+                    maxCollected = dq.collectedKeys.Length;
+                    printStatus = true;
+                }
+                if (totalSeconds != lastTotalSeconds && totalSeconds % 10 == 0)
+                {
+                    lastTotalSeconds = totalSeconds;
+                    printStatus = true;
+                }
+
+                if (printStatus)
+                {
+                    Write(maxCollected.ToString().PadLeft(2, ' '));
+                    Write(" / ");
+                    Write(totalKeyCount.ToString().PadLeft(2, ' '));
+                    WriteLine($"   ({totalSeconds.ToString().PadLeft(3, ' ')} s)");
+                }
+
+                foreach (var (key, connection) in dq.connections[dq.pos].OrderBy(c => c.Value.steps))
+                {
+                    var collectedKeys = dq.collectedKeys.Union(new[] {key}).ToArray();
+                    var hasLockedDoors = false;
+                    foreach (var door in connection.doors)
+                    {
+                        if (!collectedKeys.Contains(door))
+                        {
+                            hasLockedDoors = true;
+                            break;
+                        }
+                    }
+
+                    if (hasLockedDoors) continue;
+
+                    var visitedState = $"{key} " + string.Join("", collectedKeys.OrderBy(k => k));
+                    var steps = dq.steps + connection.steps;
+                    if (visited.TryGetValue(visitedState, out var visitedSteps) &&
+                        visitedSteps < steps)
+                    {
+                        continue;
+                    }
+                    visited[visitedState] = steps;
+
+                    var clone = RemoveKey(dq.connections, dq.pos);
+
+                    var idx = 0;
+
+                    var prio = steps + CalculateHeuristic(key, dq.connections, map, collectedKeys);
+
+                    while (idx < q.Count && q[idx].prio < prio)
+                    {
+                        idx++;
+                    }
+                    q.Insert(idx, (prio, steps, key, clone, collectedKeys));
+                }
+            }
+        }
+
+        private int CalculateHeuristic(char label, Connections connections, Map map, char[] collectedKeys)
+        {
+            var minX = int.MaxValue;
+            var minY = int.MaxValue;
+            var maxX = int.MinValue;
+            var maxY = int.MinValue;
+
+            foreach (var (keyPos, _) in map.Keys.Where(k => !collectedKeys.Contains(k.Value)))
+            {
+                minX = Math.Min(minX, keyPos.X);
+                minY = Math.Min(minY, keyPos.Y);
+                maxX = Math.Max(maxX, keyPos.X);
+                maxY = Math.Max(maxY, keyPos.Y);
+            }
+
+            return (maxX - minX) + (maxY - minY);
+        }
+
+        private Connections RemoveKey(Connections connections, char key)
+        {
+            var result = new Connections();
+            var removed = new Dictionary<char, (int steps, char[] doors)>();
+            foreach (var (ckey, value) in connections)
+            {
+                if (ckey == key)
+                {
+                    removed = value;
+                }
+                else
+                {
+                    result.Add(ckey, value.ToDictionary(key => key.Key, value => value.Value));
+                }
+            }
+
+            foreach (var (from, fmeta) in removed)
+            {
+                result[from].Remove(key);
+                foreach (var (to, tmeta) in removed.Where(k => k.Key != from))
+                {
+                    var steps = fmeta.steps + tmeta.steps;
+                    var doors = fmeta.doors.Concat(tmeta.doors).ToArray();
+                    if (!result.TryGetValue(from, out var fromDict) ||
+                        !fromDict.TryGetValue(to, out var ftmeta) ||
+                        ftmeta.steps > steps)
+                    {
+                        result[from][to] = (steps, doors);
+                        result[to][from] = (steps, doors);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private Connections FindConnections(Point start, Map map, bool debug = false)
+        {
+            var all =
+                map.Keys.Select(kvp => (coord: kvp.Key, label: kvp.Value))
+                .Concat(new[] { (coord: start, label: '@') });
+
+            var connections = new Connections();
+
+            foreach (var (startCoord, startLabel) in all)
+            {
+                if (debug)
+                {
+                    WriteLine($"From {startLabel} {startCoord}");
+                }
+                var keySteps = FindShortestParts(startCoord, map, false);
+                foreach (var (label, coord, steps, doors) in keySteps)
+                {
+                    if (debug)
+                    {
+                        WriteLine($"-> {label}: {coord} {steps} [{string.Join(", ", doors.Select(d => char.ToUpper(d)))}]");
+                    }
+                    AddConnection(connections, startLabel, label, steps, doors);
+                }
+            }
+
+            return connections;
+        }
+
+        private void AddConnection(Connections connections,
+                                   char from,
+                                   char to,
+                                   int steps,
+                                   char[] doors)
+        {
+            if (!connections.TryGetValue(from, out var toDict))
+            {
+                toDict = new();
+                connections.Add(from, toDict);
+            }
+
+            if (!toDict.TryGetValue(to, out var toSteps))
+            {
+                toDict.Add(to, (steps, doors.ToArray()));
+            }
+            else if (toSteps.steps != steps)
+            {
+                throw new InvalidOperationException("Steps mismatch!");
+            }
+
+            if (!connections.TryGetValue(to, out var fromDict))
+            {
+                fromDict = new();
+                connections.Add(to, fromDict);
+            }
+
+            if (!fromDict.TryGetValue(from, out var fromSteps))
+            {
+                if (from != '@')
+                {
+                    fromDict.Add(from, (steps, doors.ToArray()));
+                }
+            }
+            else if (toSteps.steps != steps)
+            {
+                throw new InvalidOperationException("Steps mismatch!");
+            }
         }
 
         private void CheckMapTypeHashIntegrity(Map map, Point start)
@@ -41,72 +260,6 @@ namespace Day18
             WriteLine("1: " + map .GetHashCode());
             WriteLine("2: " + map2.GetHashCode());
             WriteLine("3: " + map3.GetHashCode());
-        }
-
-        private (int, string) FindShortestPath(Point start, Map map, bool debug = false, bool mapDebug = false)
-        {
-            var collectedKeys = new HashSet<char>();
-            var q = new List<(Map map, Point pos, int steps, HashSet<char> collectedKeys, string path)>();
-            q.Add((map: map.Clone(), pos: start, steps: 0, collectedKeys, path: "@"));
-
-            HashSet<(Map, Point)> visitedState = new();
-
-            var startTime = DateTime.Now;
-            var lastTimeCheck = startTime;
-            var interval = TimeSpan.FromSeconds(1);
-
-            while (q.Any())
-            {
-                if (DateTime.Now - lastTimeCheck > interval)
-                {
-                    lastTimeCheck = DateTime.Now;
-                    var elapsed = DateTime.Now - startTime;
-                    WriteLine($"Elapsed time: {elapsed.TotalSeconds:0} s");
-                }
-                var dq = q[0];
-                q.RemoveAt(0);
-
-                if (debug)
-                {
-                    WriteLine($"Dequeuing {dq.path} ({dq.steps})");
-                }
-
-                if (!dq.map.Keys.Any())
-                {
-                    return (dq.steps, $"{dq.path} - @");
-                }
-
-                visitedState.Add((dq.map.Clone(), dq.pos));
-                var (keySteps, doorSteps) = FindShortestParts(dq.pos, dq.map, mapDebug, false);
-
-                foreach (var key in keySteps)
-                {
-                    var mapClone = dq.map.Clone();
-
-                    mapClone.PickupKey(key.coord);
-                    collectedKeys = Clone(dq.collectedKeys);
-                    collectedKeys.Add(key.label);
-                    var currSteps = dq.steps + key.steps;
-
-                    TryEnqueue(q, visitedState, mapClone, currSteps, dq.path, key, "K", collectedKeys, debug);
-                }
-
-                foreach (var door in doorSteps)
-                {
-                    if (!dq.collectedKeys.Contains(door.label))
-                    {
-                        continue;
-                    }
-
-                    var mapClone = dq.map.Clone();
-                    mapClone.OpenDoor(door.coord);
-                    var currSteps = dq.steps + door.steps;
-
-                    TryEnqueue(q, visitedState, mapClone, currSteps, dq.path, door, "D", Clone(dq.collectedKeys), debug);
-                }
-            }
-
-            return (-1, "-");
         }
 
         private void TryEnqueue(List<(Map map, Point pos, int steps, HashSet<char> collectedKeys, string path)> q, HashSet<(Map, Point)> visited, Map map, int currSteps, string path, (char label, Point coord, int steps) entity, string entityTypeLabel, HashSet<char> collectedKeys, bool debug = false)
@@ -131,7 +284,8 @@ namespace Day18
             q.Insert(idx, (map, pos: entity.coord, steps: currSteps, Clone(collectedKeys), path));
         }
 
-        private ((char label, Point coord, int steps)[] keys, (char label, Point coord, int steps)[] doors) FindShortestParts(Point start, Map map, bool alwaysContinue, bool mapDebug = false)
+        private (char label, Point coord, int steps, char[] doors)[]
+        FindShortestParts(Point start, Map map, bool mapDebug = false)
         {
             map = map.CloneMap();
             if (mapDebug)
@@ -139,60 +293,53 @@ namespace Day18
                 WriteLine($"Start at ({start})");
             }
 
-            var points = new[] { start };
+            var points = new[] { (point: start, doors: Array.Empty<char>()) };
+            map.Visit(start);
             var steps = 1;
 
-            var keySteps = new List<(char, Point, int)>();
-            var doorSteps = new List<(char, Point, int)>();
+            var keySteps = new List<(char, Point, int, char[])>();
 
             while (points.Any())
             {
-                var candidates = new HashSet<Point>();
+                var candidates = new HashSet<(Point point, char[] doors)>();
                 foreach (var p in points)
                 {
-                    if (p != start)
-                    {
-                        map.Visit(p);
-                    }
+                    map.Visit(p.point);
 
-                    foreach (var n in GetNeighbors(p))
+                    foreach (var n in GetNeighbors(p.point))
                     {
-                        candidates.Add(n);
+                        candidates.Add((n, p.doors.ToArray()));
                     }
                 }
 
-                var nextPoints = new HashSet<Point>();
+                var nextPoints = new HashSet<(Point point, char[] doors)>();
                 foreach (var n in candidates)
                 {
-                    switch (map[n])
+                    var np = n.point;
+                    switch (map[np])
                     {
                         case TileType.Walkable:
-                            nextPoints.Add(new Point(n.X, n.Y));
+                            nextPoints.Add((new Point(np.X, np.Y), n.doors.ToArray()));
                             break;
 
                         case TileType.Key:
-                            if (alwaysContinue)
+                            if (!map.IsVisited(np))
                             {
-                                nextPoints.Add(new Point(n.X, n.Y));
+                                keySteps.Add((map.Keys[np], new Point(np.X, np.Y), steps, n.doors.ToArray()));
                             }
 
-                            keySteps.Add((map.Keys[n], new Point(n.X, n.Y), steps));
                             if (mapDebug)
                             {
-                                WriteLine($"Key [{map.Keys[n]}] {steps} steps from starting point.");
+                                WriteLine($"Key [{map.Keys[np]}] {steps} steps from starting point.");
                             }
                             break;
 
                         case TileType.Door:
-                            if (alwaysContinue)
-                            {
-                                nextPoints.Add(new Point(n.X, n.Y));
-                            }
+                            nextPoints.Add((new Point(np.X, np.Y), n.doors.Concat(new[] {map.Doors[np]}).ToArray()));
 
-                            doorSteps.Add((map.Doors[n], new Point(n.X, n.Y), steps));
                             if (mapDebug)
                             {
-                                WriteLine($"Door [{map.Doors[n]}] {steps} steps from starting point.");
+                                WriteLine($"Door [{map.Doors[np]}] {steps} steps from starting point.");
                             }
                             break;
                     }
@@ -206,7 +353,7 @@ namespace Day18
                 steps++;
             }
 
-            return (keySteps.ToArray(), doorSteps.ToArray());
+            return keySteps.ToArray();
         }
 
         private Point[] GetNeighbors(Point point)
@@ -343,6 +490,11 @@ namespace Day18
             [TileType.Walkable] = ConsoleColor.DarkGray
         };
 
+        public bool IsVisited(Point point)
+        {
+            return _visitableMap?[point.Y][point.X] == TileType.Visited;
+        }
+
         public TileType this[Point point] =>
             point switch
             {
@@ -386,6 +538,10 @@ namespace Day18
 
         public void Visit(Point p)
         {
+            if (_visitableMap == null)
+            {
+                throw new NullReferenceException("_visitableMap is null!");
+            }
             _visitableMap[p.Y][p.X] = TileType.Visited;
         }
 
