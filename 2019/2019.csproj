@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>_2019</RootNamespace>
+    <Nullable>Enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Day14_2.cs"/>
+    <Compile Remove="Day16_2.cs"/>
+    <Compile Remove="Day18_2.cs"/>
+    <Compile Remove="Day21_2.cs"/>
+    <Compile Remove="Day22_1.cs"/>
+    <Compile Remove="Day22_2.cs"/>
+    <Compile Remove="Day23_2.cs"/>
+  </ItemGroup>
+</Project>
