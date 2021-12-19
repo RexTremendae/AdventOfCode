@@ -1,23 +1,93 @@
+from time import time
 
 def main():
-  print (f"Compare 0 - 1")
-  compare_(sample_set_0, sample_set_1)
-  print (f"Compare 1 - 4")
-  compare_(sample_set_1, sample_set_4)
+  print()
+
+  #print (f"Compare 0 - 1...")
+  #compare_and_print(sample_set_0, sample_set_1)
+
+  #print (f"Compare 1 - 4...")
+  #compare_and_print(sample_set_1, sample_set_4)
+
+  #result = set(sample_set_0)
+  #for m in result:
+  #  print (m)
+
+  result = compare_(sample_set_0, sample_set_1)
+  r1 = result[2]
+  print(f"Rotation: {result[2]}")
+  s1 = result[3]
+  print(f"Sensor: {s1}")
+  print()
+
+  for r in result[0]:
+    print(r)
+
+  print()
+  for r in result[1]:
+    print(r)
+  print()
+
+  result = compare_(sample_set_1, sample_set_4)
+  print(f"Rotation: {result[2]}")
+  print(f"Sensor: {result[3]}")
+  print()
+
+  r1 = result[2]
+  s1 = result[3]
+  for r in result[1]:
+    rx = rX(r, r=r1[0], cc=True)
+    ry = rY(rx, r=r1[1], cc=True)
+    rz = rZ(ry, r=r1[2], cc=True)
+    #print ((rz[0] + s1[0], rz[1] + s1[1], rz[2] + s1[2]))
+    #print (relative(rz, s1))
+    #print (relative(s1, rz))
+
+
+def compare_and_print(set1, set2):
+  start = time()
+  (result1, result2, (rx, ry, rz)) = compare_(set1, set2)
+  end = time()
+
+  print()
+  print(f"X: {rx}, Y: {ry}, Z: {ry}")
+  print()
+
+  #result1.sort(key=lambda _:_[0], reverse=True)
+  for m in result1:
+    print (m)
+  print()
+
+  #result2.sort(key=lambda _:_[0], reverse=True)
+  for m in result2:
+    print (m)
+  print()
+
+  for i in range(len(result1)):
+    print (relative(result2[i], result1[i]))
+
+  print()
+  print(f"{end - start:.3f}s")
+  print("---------------------")
+  print()
 
 
 def compare_(set1, set2):
-  max_match_set_0 = set()
   max_match_set_1 = set()
+  max_match_set_2 = set()
+
+  rotation = (0, 0, 0)
+  max_sensor = (0, 0)
 
   for x in range(4):
-    set1 = list(map(rX, set1))
+    set2 = list(map(rX, set2))
     for y in range(4):
-      set1 = list(map(rY, set1))
+      set2 = list(map(rY, set2))
       for z in range(4):
-        set1 = list(map(rZ, set1))
+        set2 = list(map(rZ, set2))
         matches_1 = set()
         matches_2 = set()
+        sensor = (0, 0)
 
         for p1_b_i in range(len(set1)):
           for p2_b_i in range(len(set2)):
@@ -25,30 +95,36 @@ def compare_(set1, set2):
               if p1_b_i == p1_i: continue
               r1 = relative(set1[p1_b_i], set1[p1_i])
 
-              for p2_i in range(p2_b_i, len(set2)):
+              for p2_i in range(p2_b_i+1, len(set2)):
                 if p2_b_i == p2_i: continue
                 r2 = relative(set2[p2_b_i], set2[p2_i])
                 if r1 == r2:
-                  matches_1.add(p1_i)
-                  matches_1.add(p1_b_i)
-                  matches_2.add(p2_i)
-                  matches_2.add(p2_b_i)
+                  if p1_i not in matches_1:
+                    matches_1.add(p1_i)
+                    matches_2.add(p2_i)
+                    sensor = relative(set2[p2_i], set1[p1_i])
+                  if p1_b_i not in matches_1:
+                    matches_1.add(p1_b_i)
+                    matches_2.add(p2_b_i)
+                    sensor = relative(set2[p2_b_i], set1[p1_b_i])
 
         if (len(matches_1) > len(max_match_set_1)):
           max_match_set_1 = matches_1
           max_match_set_2 = matches_2
+          rotation = (x, y, z)
+          max_sensor = sensor
 
-  match_list = list(map(lambda _:set1[_], max_match_set_1))
-  match_list.sort(key=lambda _:_[0], reverse=True)
-  for m in match_list:
-    print (m)
-  print()
+  #result_1 = []
+  #for r in max_match_set_1:
+  #  result_1.append(set1[r])
 
-  match_list = list(map(lambda _:set2[_], max_match_set_2))
-  match_list.sort(key=lambda _:_[0], reverse=True)
-  for m in match_list:
-    print (m)
-  print()
+  result_1 = list(map(lambda _: set1[_], max_match_set_1))
+  result_2 = list(map(lambda _: set2[_], max_match_set_2))
+  #for r in max_match_set_2:
+  #  result_2.append(set2[r])
+
+  return (result_1, result_2, rotation, max_sensor)
+
 
 def relative(p1, p2):
   return (p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2])
@@ -64,14 +140,20 @@ def compare(_1, _2):
   return sum
 
 
-def rX(v):
-  return rotate(mrX, v)
+def rX(v, r = 1, cc = False):
+  for t in range(r):
+    v = rotate(mrXcc if cc else mrX, v)
+  return v
 
-def rY(v):
-  return rotate(mrY, v)
+def rY(v, r = 1, cc = False):
+  for t in range(r):
+    v = rotate(mrYcc if cc else mrY, v)
+  return v
 
-def rZ(v):
-  return rotate(mrZ, v)
+def rZ(v, r = 1, cc = False):
+  for t in range(r):
+    v = rotate(mrZcc if cc else mrZ, v)
+  return v
 
 
 def rotate(m, v):
@@ -107,7 +189,27 @@ mrZ = [
     [0, 0, 1]
 ]
 
-sample_set_0 = [
+mrXcc = [
+    [1, 0, 0],
+    [0, cos90, sin90],
+    [0, -sin90, cos90]
+]
+
+mrYcc = [
+    [cos90, 0, -sin90],
+    [0, 1, 0],
+    [sin90, 0, cos90]
+]
+
+mrZcc = [
+    [cos90, sin90, 0],
+    [-sin90, cos90, 0],
+    [0, 0, 1]
+]
+
+#--- scanner 0 ---
+sample_set_0 = \
+[
 (404,-588,-901),
 (528,-643,409),
 (-838,591,734),
@@ -135,7 +237,9 @@ sample_set_0 = [
 (459,-707,401)
 ]
 
-sample_set_1 = [
+#--- scanner 1 ---
+sample_set_1 = \
+[
 (686,422,578),
 (605,423,415),
 (515,917,-361),
@@ -163,7 +267,70 @@ sample_set_1 = [
 (553,889,-390)
 ]
 
-sample_set_4 = [
+#--- scanner 2 ---
+sample_set_2 = \
+[
+(649,640,665),
+(682,-795,504),
+(-784,533,-524),
+(-644,584,-595),
+(-588,-843,648),
+(-30,6,44),
+(-674,560,763),
+(500,723,-460),
+(609,671,-379),
+(-555,-800,653),
+(-675,-892,-343),
+(697,-426,-610),
+(578,704,681),
+(493,664,-388),
+(-671,-858,530),
+(-667,343,800),
+(571,-461,-707),
+(-138,-166,112),
+(-889,563,-600),
+(646,-828,498),
+(640,759,510),
+(-630,509,768),
+(-681,-892,-333),
+(673,-379,-804),
+(-742,-814,-386),
+(577,-820,562)
+]
+
+#--- scanner 3 ---
+sample_set_3 = \
+[
+(-589,542,597),
+(605,-692,669),
+(-500,565,-823),
+(-660,373,557),
+(-458,-679,-417),
+(-488,449,543),
+(-626,468,-788),
+(338,-750,-386),
+(528,-832,-391),
+(562,-778,733),
+(-938,-730,414),
+(543,643,-506),
+(-524,371,-870),
+(407,773,750),
+(-104,29,83),
+(378,-903,-323),
+(-778,-728,485),
+(426,699,580),
+(-438,-605,-362),
+(-469,-447,-387),
+(509,732,623),
+(647,635,-688),
+(-868,-804,481),
+(614,-800,639),
+(595,780,-596)
+]
+
+#--- scanner 4 ---
+sample_set_4 = \
+[
 (727,592,562),
 (-293,-554,779),
 (441,611,-461),
@@ -189,7 +356,7 @@ sample_set_4 = [
 (839,-516,451),
 (891,-625,532),
 (-652,-548,-490),
-(30,-46,-14)
+(30,-46,-14),
 ]
 
 main()
