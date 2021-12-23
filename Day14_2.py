@@ -6,6 +6,13 @@ def main():
   print('')
   print(colored('Naive:', 'green', attrs=['bold']))
   result = naive_and_slow(transformations, initial, 5)
+  counter = {}
+  for ch in result:
+    if ch not in counter:
+      counter[ch] = 1
+    else:
+      counter[ch] += 1
+  print(counter)
 
   print('')
   print(colored('Smarter:', 'green', attrs=['bold']))
@@ -15,24 +22,19 @@ def main():
   print (result)
 
 def smarter_and_faster(transformations, initial, steps):
-  keys = []
-  for c in range(len(initial)-1):
-    keys.append(initial[c:c+2])
-
   tree_transformations = {}
-  build_tree_transformations(tree_transformations, transformations, keys, 0, steps)
+
+  for c in range(len(initial)-1):
+    build_tree_transformations(tree_transformations, transformations, initial[c:c+2], 0, steps)
 
   return ''
 
-def build_tree_transformations(tree_transformations, transformations, keys, level, max_depth):
-  for key in keys:
-    if key in tree_transformations:
-      (line, height) = tree_transformations[key]
-      if level + height < max_depth:
-        for c in range(len(line)-1):
-          build_tree_transformations(tree_transformations, transformations, [line[c:c+2]], height, max_depth)
-    else:
-      (transformations, key)
+def build_tree_transformations(tree_transformations, transformations, key, level, max_depth):
+  if key not in tree_transformations:
+    tree_transformations[key] = {}
+  tree = tree_transformations[key]
+  tree_level = level
+  while tree_level >= 0 and tree_level not in tree: tree_level -= 1
 
 def naive_and_slow(transformations, initial, steps):
   print(f"0: {initial}")
