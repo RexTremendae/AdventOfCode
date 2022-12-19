@@ -4,7 +4,7 @@ public partial class Day11
 {
     public async Task Part1()
     {
-        var filename = "Day11.txt";
+        var filename = "Day11_small.txt";
 
         var input = await ReadInput(filename);
 
@@ -24,7 +24,7 @@ public partial class Day11
                         "*" => item*operand,
                         "+" => item+operand,
                         _ => throw new InvalidOperationException()
-                    } / 3;
+                    };
 
                     if (newItem % monkey.TestDivisibleBy == 0)
                     {
@@ -37,13 +37,13 @@ public partial class Day11
                 }
                 monkey.Items.Clear();
             }
+            foreach (var key in input.Keys)
+            {
+                WriteLine($"Monkey {key}: {string.Join(", ", input[key].Items)}");
+            }
+            WriteLine();
         }
-/*
-        foreach (var key in input.Keys)
-        {
-            WriteLine($"Monkey {key}: {string.Join(", ", input[key].Items)}");
-        }
-*/
+
         var twoMost = inspections.Values.OrderByDescending(_ => _).Take(2).ToArray();
         WriteLine(twoMost[0] * twoMost[1]);
 

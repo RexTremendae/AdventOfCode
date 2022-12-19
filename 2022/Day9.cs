@@ -77,7 +77,7 @@ public class Day9
             var debug = parts[0] == "L";
 debug = false;
             if (debug) WriteLine(line);
-            foreach (var x in 0.To(multiplier, '['))
+            foreach (var x in 0.To(multiplier))
             {
                 var from = knots[0];
                 var to = (x: from.x + delta.x, y: from.y + delta.y);

@@ -10,6 +10,57 @@ public class Day17
         return Task.CompletedTask;
     }
 
+    public Task Part2()
+    {
+        /*
+        var threshold = 50;
+        var streams = streams_puzzle;
+        var iterations = 10000;
+        */
+
+        var threshold = 20;
+        var streams = streams_example;
+        var iterations = 3000;
+
+        var (board, sequence, maxHeight) = Solve(streams, iterations);
+        var (cycleStart, cycleLength) = FindGraphicCycle(board, threshold);
+
+        WriteLine($"{cycleStart} + (C × {cycleLength})");
+
+        var firstRockCount = 0;
+        var secondRockCount = 0;
+        var thirdRockCount = 0;
+        foreach (var (rockCount, height) in sequence)
+        {
+            if (firstRockCount == 0)
+            {
+                if (height >= cycleStart)
+                {
+                    firstRockCount = rockCount;
+                    WriteLine($"1: {rockCount} rocks => {height} lines");
+                    continue;
+                }
+            }
+            else if (secondRockCount == 0)
+            {
+                if (height >= cycleStart+cycleLength)
+                {
+                    secondRockCount = rockCount;
+                    WriteLine($"2: {rockCount} rocks => {height} lines");
+                    continue;
+                }
+            }
+            else if (height >= cycleStart+2*cycleLength)
+            {
+                thirdRockCount = rockCount;
+                WriteLine($"3: {rockCount} rocks => {height} lines");
+                break;
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
     private (int cycleStart, int cycleLength) FindGraphicCycle(HashSet<(int x, int y)> board, int threshold)
     {
         var lines = new List<int>();
