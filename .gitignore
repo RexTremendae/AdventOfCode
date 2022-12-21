@@ -5,6 +5,8 @@
 bin/
 obj/
 .vs/
+.vscode/
+.idea/
 packages/
 core/
 
