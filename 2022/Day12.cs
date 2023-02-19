@@ -4,7 +4,7 @@ public class Day12
 {
     public async Task Part1()
     {
-        var (map, start, goal) = await ReadInput("Day12.txt");
+        var (map, start, goal) = await ReadInput("Day12_medium.txt");
         Clock.Tick();
         var solution = Solve(map, start, goal);
         WriteLine($"{Clock.Tock().TotalSeconds:0.00} s");
@@ -87,8 +87,8 @@ public class Day12
                 nVisited[y][x] = nDist;
                 //var nPath = dq.path.Concat(new[] {(x, y)}).ToArray();
 
-                var heuristic = (Math.Abs(x - goal.x) + Math.Abs(y - goal.y)) + (25 - h);
-                heuristic += nDist + (25 - map[y][x]);
+                var heuristic = (Math.Abs(x - goal.x) + Math.Abs(y - goal.y));
+                heuristic += nDist;
 
                 var idx = 0;
                 while (idx < q.Count && heuristic > q[idx].heuristic) idx++;
