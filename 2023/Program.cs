@@ -1,9 +1,14 @@
 ﻿
 var start = DateTime.Now;
-await new Day1().Part2();
+await new Day2().Part2();
 var duration = DateTime.Now-start;
-Console.WriteLine($"{duration.TotalSeconds:0.00}s");
-
+Console.ForegroundColor = ConsoleColor.White;
+Console.WriteLine("-------");
+Console.ForegroundColor = ConsoleColor.Magenta;
+Console.WriteLine($" {duration.TotalSeconds:0.00}s");
+Console.ForegroundColor = ConsoleColor.White;
+Console.WriteLine("-------");
+Console.ResetColor();
 
 public static class IntExtensions
 {
