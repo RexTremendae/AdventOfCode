@@ -1,14 +1,28 @@
 ﻿
 var start = DateTime.Now;
-await new Day2().Part2();
+await new Day3().Part2();
 var duration = DateTime.Now-start;
-Console.ForegroundColor = ConsoleColor.White;
-Console.WriteLine("-------");
-Console.ForegroundColor = ConsoleColor.Magenta;
-Console.WriteLine($" {duration.TotalSeconds:0.00}s");
-Console.ForegroundColor = ConsoleColor.White;
-Console.WriteLine("-------");
-Console.ResetColor();
+
+ColorWriter.WriteLine("-------", ConsoleColor.White);
+ColorWriter.WriteLine($" {duration.TotalSeconds:0.00}s", ConsoleColor.Magenta);
+ColorWriter.WriteLine("-------", ConsoleColor.White);
+
+public static class ColorWriter
+{
+    public static void Write(object? data, ConsoleColor? color = null)
+    {
+        if (color != null) Console.ForegroundColor = color.Value;
+        Console.Write(data);
+        if (color != null) Console.ResetColor();
+    }
+
+    public static void WriteLine(object? data, ConsoleColor? color = null)
+    {
+        if (color != null) Console.ForegroundColor = color.Value;
+        Console.WriteLine(data);
+        if (color != null) Console.ResetColor();
+    }
+}
 
 public static class IntExtensions
 {
