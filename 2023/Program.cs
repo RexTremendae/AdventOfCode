@@ -1,6 +1,6 @@
 ﻿
 var start = DateTime.Now;
-await new Day3().Part2();
+await new Day4().Part2();
 var duration = DateTime.Now-start;
 
 ColorWriter.WriteLine("-------", ConsoleColor.White);
