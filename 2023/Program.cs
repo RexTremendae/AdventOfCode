@@ -9,14 +9,14 @@ ColorWriter.WriteLine("-------", ConsoleColor.White);
 
 public static class ColorWriter
 {
-    public static void Write(object? data, ConsoleColor? color = null)
+    public static void Write(object? data = null, ConsoleColor? color = null)
     {
         if (color != null) Console.ForegroundColor = color.Value;
         Console.Write(data);
         if (color != null) Console.ResetColor();
     }
 
-    public static void WriteLine(object? data, ConsoleColor? color = null)
+    public static void WriteLine(object? data = null, ConsoleColor? color = null)
     {
         if (color != null) Console.ForegroundColor = color.Value;
         Console.WriteLine(data);
